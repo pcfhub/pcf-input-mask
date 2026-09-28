@@ -177,6 +177,49 @@
             </label>
 
             <label>
+                Mask
+                <select id="harness-mask">
+                    <option value="">(blank — the US phone)</option>
+                    <option value="phone-us">phone-us (999) 999-9999</option>
+                    <option value="zip">zip 99999</option>
+                    <option value="zip4">zip4 99999-9999</option>
+                    <option value="postal-ca">postal-ca A9A 9A9</option>
+                    <option value="ssn">ssn 999-99-9999</option>
+                    <option value="custom">custom — the pattern below</option>
+                </select>
+                <span>Changing it re-renders the mounted control, as a maker's edit or the hub's preset switch does.</span>
+            </label>
+
+            <label>
+                Custom pattern
+                <input type="text" id="harness-pattern" value="AA-9999" />
+                <span>9 digit, a letter, A upper-case letter, * either, \ literal.</span>
+            </label>
+
+            <label>
+                Store as
+                <select id="harness-store">
+                    <option value="">(blank — formatted)</option>
+                    <option value="formatted">formatted</option>
+                    <option value="raw">raw</option>
+                </select>
+            </label>
+
+            <label>
+                Guide
+                <select id="harness-guide">
+                    <option value="">(blank — on)</option>
+                    <option value="on">on</option>
+                    <option value="off">off</option>
+                </select>
+            </label>
+
+            <label>
+                Placeholder
+                <input type="text" id="harness-placeholder" value="Phone number" />
+            </label>
+
+            <label>
                 Field-level security
                 <select id="harness-security">
                     <option value="none">None (the usual case)</option>

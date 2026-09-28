@@ -6,12 +6,6 @@ order: 2
 
 # Installation
 
-<!--
-  Do not link to the release assets by hand. The hub serves the managed and
-  unmanaged downloads for the version the reader is viewing, and a hard-coded
-  link goes stale on the next release.
--->
-
 :::steps
 1. Download the **managed** solution for your environment.
 2. In the Power Platform admin centre, import the solution.
@@ -27,5 +21,10 @@ cannot be cleanly uninstalled.
 
 ## Requirements
 
-State the minimum platform version, and any dependency a maker has to install
-first.
+Nothing beyond a current Power Platform environment. The control has no
+runtime dependencies — no React, no Fluent, no masking library — so there is
+nothing to install first and nothing to keep in step with a platform upgrade.
+
+It declares `external-service-usage` as disabled, so it is not a premium
+component, and it declares no features, so it asks the installing maker for no
+permissions.

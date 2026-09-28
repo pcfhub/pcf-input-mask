@@ -11,80 +11,49 @@ Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-input-mask), b
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
 
-<!--
-  This README is for someone standing in the repository — a maintainer, or
-  somebody deciding whether to install the control. The hub publishes `docs/`,
-  not this file, so do not duplicate the documentation here.
-
-  The PCFHub button above promises a live demo. If `demo.fidelity` in
-  `pcfhub.json` is `none`, point it at `badges/view-on-pcfhub.svg` and label it
-  "View on PCFHub" instead.
-
-  The three sections below are the ones worth writing by hand. Everything after
-  them is the same in every repository and needs no edits.
-
-  **Each carries a placeholder, and `npm run check` fails while one remains.**
-  That is deliberate: an unwritten README is the first thing a visitor to the
-  repository sees, and the version of this file that shipped before had worked
-  examples sitting in it that read as real content. One of them — a bound
-  `value` property — was wrong for every control that is not a field control,
-  and reached a published repository.
-
-  Delete these comments once the sections are written. They are instructions to
-  you, and they are noise on a public page.
--->
-
 ## What it does
 
-__WHAT_IT_DOES__
+A Text or Phone column typed into a fixed pattern — `(999) 999-9999`, `A9A 9A9`,
+or the maker's own — for model-driven forms and canvas apps. It replaces the
+platform's *Input Mask* control, deprecated in January 2023 and unsupported
+since April 2024.
 
-<!--
-  A few paragraphs, not a feature list. Answer what the built-in control does
-  not do, then spend the rest on the one or two decisions a reader would
-  otherwise question — the binding shape, a behaviour that looks like a bug
-  until you know why, a constraint you chose to accept.
+The work is in keeping the user's place. Every keystroke changes the value the
+box holds, and a browser moves the cursor to the end whenever that happens, so
+the control redraws after each edit and puts the cursor back by counting the
+characters before it — typing in the middle, deleting across a `)`, pasting
+half a number all leave it where the user was. The platform's late,
+out-of-order echoes of its own writes are recognised and ignored.
 
-  This is the section that saves an issue being opened.
--->
+Two decisions a reader would otherwise question. A partial value is **written**,
+not held back — a form's save cannot be blocked from a control, and losing what
+was typed is worse than keeping it with an *Incomplete* message; `isValid` is
+there for a canvas app to gate its Save on. And a stored value the mask cannot
+read whole is shown with a note and left alone until someone edits it.
 
 ## Properties
 
-__PROPERTIES__
+| Property | Type | Usage | Default | What it controls |
+| --- | --- | --- | --- | --- |
+| `value` | SingleLine.Text or SingleLine.Phone | bound, **required** | — | The column |
+| `mask` | Enum | input | `phone-us` | `phone-us`, `zip`, `zip4`, `postal-ca`, `ssn` or `custom` |
+| `pattern` | SingleLine.Text | input | — | The pattern when `mask` is `custom`: `9` digit, `a` letter, `A` upper-case letter, `*` either, `` literal |
+| `store` | Enum | input | `formatted` | `formatted` stores what is shown; `raw` stores the typed characters alone |
+| `guide` | Enum | input | `on` | The `(___) ___-____` guide in an empty, focused field |
+| `placeholder` | SingleLine.Text | input | — | Hint text while the field is empty |
+| `isValid` | TwoOptions | output | — | Empty or complete; for a canvas Save. Do not bind on a model-driven form |
 
-<!--
-  The whole configuration surface, including the defaults. `docs/api.md`
-  generates its tables from the manifest; this one is hand-written, so keep it
-  short enough to stay true. Read them out of the manifest rather than from
-  memory, and check them against `generated/ManifestTypes.d.ts`.
-
-  A field control's table looks like this — one row per property, and for a
-  dataset control a second table for the `property-set` roles above it, giving
-  both the display name a maker sees and the manifest name the code looks up by:
-
-      | Property | Type | Usage | Default | What it controls |
-      | --- | --- | --- | --- | --- |
-      | `value` | SingleLine.Text | bound, **required** | — | The column this control reads and writes |
-
-  Follow it with the notes that do not fit a table: which languages the .resx
-  ship, whether the control bundles a framework or uses the platform's, which
-  `uses-feature` permissions a maker is asked for at install, and any property
-  whose accepted values need spelling out.
--->
+Blank inputs mean the default, decided in code. Strings ship in English,
+Spanish, French, German and Japanese. No framework, no library, no
+`uses-feature` — nothing for a maker to approve at install.
 
 ## On the hub
 
-__ON_THE_HUB__
-
-<!--
-  What `demo.fidelity` is, and *why* it is that and not the next one up. A
-  `limited` demo should say which interactions do not work there; a `full` one
-  is worth explaining, because it follows from the control not reaching Web API,
-  device or navigation — which is also one fewer permission prompt for the maker
-  installing it.
-
-  Mention what the presets cover. Delete this section if fidelity is `none` —
-  and delete the placeholder with it, or the check will go on failing.
--->
+The demo is `full`: the control reaches no Web API, device or navigation, so
+the hub's harness answers everything it reads. The presets cover the US phone,
+an empty field with its guide, a Canadian postal code, a custom `AA-9999`,
+raw storage, and a stored value that does not fit. What the demo cannot show
+is the platform's echo timing, which only a real form produces.
 
 ## Install
 

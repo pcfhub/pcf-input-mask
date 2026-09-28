@@ -1,26 +1,41 @@
 ---
 title: FAQ
-description: Questions that come up more than once.
+description: Common questions about the mask.
 order: 8
 ---
 
 # FAQ
 
-<!--
-  Grow this page from real questions — issues, comments, the same email twice.
-  Inventing questions nobody asked produces a page nobody reads.
--->
+## Why was my partial value saved?
 
-## Why does the control not appear in the component list?
+Because a form's save cannot be blocked from a control, and throwing away what
+somebody typed is worse than keeping it with a warning. The field says
+**Incomplete**; a business rule or column validation can make it unsaveable.
+See [Limitations](limitations.md).
 
-The usual cause and the fix.
+## Does it replace the platform's Input Mask control?
 
-## Does it work offline / on mobile / in a phone layout?
+It covers what that control was used for — a fixed pattern on a text or phone
+column — with the same pattern characters. The platform's control was
+deprecated in January 2023 and is unsupported since April 2024.
 
-Answer plainly, and link to [Limitations](limitations.md) rather than repeating
-it.
+## Can I switch *Store as* after rows exist?
 
-## How do I report a bug?
+Yes. The control reads both shapes, so existing rows display correctly either
+way. Each row is rewritten in the new shape the next time someone edits it; to
+convert them all at once, update them with a flow or a data import.
 
-Open an issue at <https://github.com/pcfhub/pcf-input-mask/issues>, with the
-platform version and the control version from the solution.
+## Why is the number pad showing on my phone?
+
+Every slot in the mask takes a digit, so the control asks for the numeric
+keyboard. A mask with a letter slot asks for the full keyboard.
+
+## Does it work in a canvas app?
+
+Yes, with **Is valid** to gate a Save on. See [Canvas apps](canvas.md).
+
+## Can the message say something else?
+
+The messages are the control's own, in English, Spanish, French, German and
+Japanese, following the user's language. A business rule's message on the
+same column is shown in their place.

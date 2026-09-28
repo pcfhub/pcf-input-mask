@@ -1,6 +1,6 @@
 {
   "name": "pcf-input-mask",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.",
   "license": "MIT",
   "private": true,

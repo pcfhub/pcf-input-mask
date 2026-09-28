@@ -79,7 +79,7 @@
     <value>Value</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>The column this control reads and writes.</value>
+    <value>The Text or Phone column this control masks.</value>
   </data>
 
   <data name="placeholder_Name" xml:space="preserve">
@@ -101,5 +101,74 @@
   -->
   <data name="InputMask_NoAccess" xml:space="preserve">
     <value>You do not have access to this value.</value>
+  </data>
+  <data name="mask_Name" xml:space="preserve">
+    <value>Mask</value>
+  </data>
+  <data name="mask_Desc" xml:space="preserve">
+    <value>The shape the value takes: a preset, or Custom with the pattern below.</value>
+  </data>
+  <data name="mask_PhoneUs" xml:space="preserve">
+    <value>US phone (999) 999-9999</value>
+  </data>
+  <data name="mask_Zip" xml:space="preserve">
+    <value>ZIP code 99999</value>
+  </data>
+  <data name="mask_Zip4" xml:space="preserve">
+    <value>ZIP+4 99999-9999</value>
+  </data>
+  <data name="mask_PostalCa" xml:space="preserve">
+    <value>Canadian postal code A9A 9A9</value>
+  </data>
+  <data name="mask_Ssn" xml:space="preserve">
+    <value>SSN 999-99-9999</value>
+  </data>
+  <data name="mask_Custom" xml:space="preserve">
+    <value>Custom pattern</value>
+  </data>
+  <data name="pattern_Name" xml:space="preserve">
+    <value>Custom pattern</value>
+  </data>
+  <data name="pattern_Desc" xml:space="preserve">
+    <value>Used when Mask is Custom. 9 is a digit, a a letter, A a letter made upper-case, * a letter or digit; \ before a character makes it literal. Example: AA-9999.</value>
+  </data>
+  <data name="store_Name" xml:space="preserve">
+    <value>Store as</value>
+  </data>
+  <data name="store_Desc" xml:space="preserve">
+    <value>Formatted stores what the user sees; Raw stores only the characters typed into the slots.</value>
+  </data>
+  <data name="store_Formatted" xml:space="preserve">
+    <value>Formatted</value>
+  </data>
+  <data name="store_Raw" xml:space="preserve">
+    <value>Raw characters only</value>
+  </data>
+  <data name="guide_Name" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="guide_Desc" xml:space="preserve">
+    <value>Show the mask’s shape, such as (___) ___-____, in an empty field while it has focus.</value>
+  </data>
+  <data name="guide_On" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="guide_Off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="isValid_Name" xml:space="preserve">
+    <value>Is valid</value>
+  </data>
+  <data name="isValid_Desc" xml:space="preserve">
+    <value>True when the value is empty or fills the mask. For a canvas app to gate its Save on; do not bind it on a model-driven form.</value>
+  </data>
+  <data name="InputMask_Incomplete" xml:space="preserve">
+    <value>Incomplete: {0} of {1} characters.</value>
+  </data>
+  <data name="InputMask_Lossy" xml:space="preserve">
+    <value>The saved value “{0}” does not fit this mask. Editing it will reformat it.</value>
+  </data>
+  <data name="InputMask_BadPattern" xml:space="preserve">
+    <value>This field’s custom pattern is empty or has no 9, a, A or *, so it accepts nothing.</value>
   </data>
 </root>

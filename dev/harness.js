@@ -17,7 +17,8 @@
     var registration = host.captureRegistration(window);
 
     /** The platform's copy of the column, which is not the control's copy. */
-    var columnValue = host.DEFAULTS.value;
+    // A value the default mask reads, rather than the rig's "Contoso Ltd".
+    var columnValue = '5551234567';
 
     var instance = null;
     var container = null;
@@ -66,6 +67,15 @@
             width: Number(document.getElementById('harness-width').value),
             calls: calls,
             value: columnValue,
+            // This control's own inputs. Blank is `null`, as the platform hands
+            // over an input the maker left unset.
+            inputs: {
+                mask: document.getElementById('harness-mask').value || null,
+                pattern: document.getElementById('harness-pattern').value || null,
+                store: document.getElementById('harness-store').value || null,
+                guide: document.getElementById('harness-guide').value || null,
+            },
+            placeholder: document.getElementById('harness-placeholder').value,
             security: document.getElementById('harness-security').value,
             error: document.getElementById('harness-error').checked,
             disabled: document.getElementById('harness-disabled').checked,

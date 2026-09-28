@@ -75,13 +75,13 @@
     <value>Input Mask</value>
   </data>
   <data name="InputMask_Desc" xml:space="preserve">
-    <value>Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.</value>
+    <value>Saisissez dans un modèle (téléphones, codes postaux, identifiants) et la colonne garde sa forme.</value>
   </data>
   <data name="value_Name" xml:space="preserve">
     <value>Valeur</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>La colonne que ce contrôle lit et écrit.</value>
+    <value>La colonne Texte ou Téléphone que ce contrôle masque.</value>
   </data>
   <data name="placeholder_Name" xml:space="preserve">
     <value>Espace réservé</value>
@@ -91,5 +91,74 @@
   </data>
   <data name="InputMask_NoAccess" xml:space="preserve">
     <value>Vous n'avez pas accès à cette valeur.</value>
+  </data>
+  <data name="mask_Name" xml:space="preserve">
+    <value>Masque</value>
+  </data>
+  <data name="mask_Desc" xml:space="preserve">
+    <value>La forme que prend la valeur : un préréglage, ou Personnalisé avec le modèle ci-dessous.</value>
+  </data>
+  <data name="mask_PhoneUs" xml:space="preserve">
+    <value>Téléphone américain (999) 999-9999</value>
+  </data>
+  <data name="mask_Zip" xml:space="preserve">
+    <value>Code ZIP 99999</value>
+  </data>
+  <data name="mask_Zip4" xml:space="preserve">
+    <value>ZIP+4 99999-9999</value>
+  </data>
+  <data name="mask_PostalCa" xml:space="preserve">
+    <value>Code postal canadien A9A 9A9</value>
+  </data>
+  <data name="mask_Ssn" xml:space="preserve">
+    <value>SSN 999-99-9999</value>
+  </data>
+  <data name="mask_Custom" xml:space="preserve">
+    <value>Modèle personnalisé</value>
+  </data>
+  <data name="pattern_Name" xml:space="preserve">
+    <value>Modèle personnalisé</value>
+  </data>
+  <data name="pattern_Desc" xml:space="preserve">
+    <value>Utilisé quand Masque vaut Personnalisé. 9 est un chiffre, a une lettre, A une lettre mise en majuscule, * une lettre ou un chiffre ; \ devant un caractère le rend littéral. Exemple : AA-9999.</value>
+  </data>
+  <data name="store_Name" xml:space="preserve">
+    <value>Enregistrer sous</value>
+  </data>
+  <data name="store_Desc" xml:space="preserve">
+    <value>Mis en forme enregistre ce que voit l’utilisateur ; Brut enregistre seulement les caractères saisis.</value>
+  </data>
+  <data name="store_Formatted" xml:space="preserve">
+    <value>Mis en forme</value>
+  </data>
+  <data name="store_Raw" xml:space="preserve">
+    <value>Caractères bruts uniquement</value>
+  </data>
+  <data name="guide_Name" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="guide_Desc" xml:space="preserve">
+    <value>Affiche la forme du masque, par exemple (___) ___-____, dans un champ vide qui a le focus.</value>
+  </data>
+  <data name="guide_On" xml:space="preserve">
+    <value>Activé</value>
+  </data>
+  <data name="guide_Off" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="isValid_Name" xml:space="preserve">
+    <value>Est valide</value>
+  </data>
+  <data name="isValid_Desc" xml:space="preserve">
+    <value>Vrai quand la valeur est vide ou remplit le masque. Pour conditionner l’enregistrement d’une application canevas ; ne la liez pas sur un formulaire piloté par modèle.</value>
+  </data>
+  <data name="InputMask_Incomplete" xml:space="preserve">
+    <value>Incomplet : {0} caractères sur {1}.</value>
+  </data>
+  <data name="InputMask_Lossy" xml:space="preserve">
+    <value>La valeur enregistrée « {0} » ne correspond pas à ce masque. La modifier la remettra en forme.</value>
+  </data>
+  <data name="InputMask_BadPattern" xml:space="preserve">
+    <value>Le modèle personnalisé de ce champ est vide ou ne contient ni 9, ni a, ni A, ni *, il n’accepte donc rien.</value>
   </data>
 </root>

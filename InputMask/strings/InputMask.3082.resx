@@ -75,13 +75,13 @@
     <value>Input Mask</value>
   </data>
   <data name="InputMask_Desc" xml:space="preserve">
-    <value>Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.</value>
+    <value>Escriba dentro de un patrón (teléfonos, códigos postales, identificadores) y la columna conserva su forma.</value>
   </data>
   <data name="value_Name" xml:space="preserve">
     <value>Valor</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>La columna que este control lee y escribe.</value>
+    <value>La columna de texto o de teléfono que enmascara este control.</value>
   </data>
   <data name="placeholder_Name" xml:space="preserve">
     <value>Marcador de posición</value>
@@ -91,5 +91,74 @@
   </data>
   <data name="InputMask_NoAccess" xml:space="preserve">
     <value>No tiene acceso a este valor.</value>
+  </data>
+  <data name="mask_Name" xml:space="preserve">
+    <value>Máscara</value>
+  </data>
+  <data name="mask_Desc" xml:space="preserve">
+    <value>La forma que toma el valor: un valor predefinido, o Personalizado con el patrón de abajo.</value>
+  </data>
+  <data name="mask_PhoneUs" xml:space="preserve">
+    <value>Teléfono de EE. UU. (999) 999-9999</value>
+  </data>
+  <data name="mask_Zip" xml:space="preserve">
+    <value>Código ZIP 99999</value>
+  </data>
+  <data name="mask_Zip4" xml:space="preserve">
+    <value>ZIP+4 99999-9999</value>
+  </data>
+  <data name="mask_PostalCa" xml:space="preserve">
+    <value>Código postal de Canadá A9A 9A9</value>
+  </data>
+  <data name="mask_Ssn" xml:space="preserve">
+    <value>SSN 999-99-9999</value>
+  </data>
+  <data name="mask_Custom" xml:space="preserve">
+    <value>Patrón personalizado</value>
+  </data>
+  <data name="pattern_Name" xml:space="preserve">
+    <value>Patrón personalizado</value>
+  </data>
+  <data name="pattern_Desc" xml:space="preserve">
+    <value>Se usa cuando Máscara es Personalizado. 9 es un dígito, a una letra, A una letra en mayúscula, * una letra o un dígito; \ delante de un carácter lo hace literal. Ejemplo: AA-9999.</value>
+  </data>
+  <data name="store_Name" xml:space="preserve">
+    <value>Guardar como</value>
+  </data>
+  <data name="store_Desc" xml:space="preserve">
+    <value>Con formato guarda lo que ve el usuario; Sin formato guarda solo los caracteres escritos.</value>
+  </data>
+  <data name="store_Formatted" xml:space="preserve">
+    <value>Con formato</value>
+  </data>
+  <data name="store_Raw" xml:space="preserve">
+    <value>Solo caracteres sin formato</value>
+  </data>
+  <data name="guide_Name" xml:space="preserve">
+    <value>Guía</value>
+  </data>
+  <data name="guide_Desc" xml:space="preserve">
+    <value>Muestra la forma de la máscara, por ejemplo (___) ___-____, en un campo vacío mientras tiene el foco.</value>
+  </data>
+  <data name="guide_On" xml:space="preserve">
+    <value>Activado</value>
+  </data>
+  <data name="guide_Off" xml:space="preserve">
+    <value>Desactivado</value>
+  </data>
+  <data name="isValid_Name" xml:space="preserve">
+    <value>Es válido</value>
+  </data>
+  <data name="isValid_Desc" xml:space="preserve">
+    <value>Verdadero cuando el valor está vacío o completa la máscara. Para que una aplicación de lienzo condicione su guardado; no lo enlace en un formulario basado en modelo.</value>
+  </data>
+  <data name="InputMask_Incomplete" xml:space="preserve">
+    <value>Incompleto: {0} de {1} caracteres.</value>
+  </data>
+  <data name="InputMask_Lossy" xml:space="preserve">
+    <value>El valor guardado «{0}» no encaja en esta máscara. Al editarlo se volverá a dar formato.</value>
+  </data>
+  <data name="InputMask_BadPattern" xml:space="preserve">
+    <value>El patrón personalizado de este campo está vacío o no contiene 9, a, A ni *, así que no acepta nada.</value>
   </data>
 </root>

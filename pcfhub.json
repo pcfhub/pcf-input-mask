@@ -5,8 +5,8 @@
   "name": "Input Mask",
   "tagline": "Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.",
   "category": "input",
-  "hosts": ["model-driven"],
-  "tags": [],
+  "hosts": ["canvas", "model-driven"],
+  "tags": ["accessible", "localised", "no-dependencies", "input-mask", "phone", "validation"],
 
   "control": {
     "namespace": "PCFHub",
@@ -32,7 +32,49 @@
   },
 
   "demo": {
-    "fidelity": "none",
-    "presets": []
+    "fidelity": "full",
+    "bundle": "out/controls/InputMask/bundle.js",
+    "styles": [
+      "out/controls/InputMask/css/InputMask.css"
+    ],
+    "presets": [
+      {
+        "slug": "phone",
+        "name": "US phone",
+        "description": "A stored raw number, shown in the mask. Click into it and type, delete across the ) — the cursor stays where you are.",
+        "props": { "value": "2125550100", "mask": "phone-us", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "Phone" },
+        "isDefault": true
+      },
+      {
+        "slug": "empty-guide",
+        "name": "Empty, with the guide",
+        "description": "Focus the empty field and the guide shows the shape. Type a few digits and click away to see the incomplete message.",
+        "props": { "value": "", "mask": "phone-us", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "Phone" }
+      },
+      {
+        "slug": "postal-ca",
+        "name": "Canadian postal code",
+        "description": "A9A 9A9: letters are made upper-case as you type.",
+        "props": { "value": "k1a0b1", "mask": "postal-ca", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "" }
+      },
+      {
+        "slug": "custom",
+        "name": "Custom pattern",
+        "description": "AA-9999, a maker's own pattern: two upper-case letters, a literal dash, four digits.",
+        "props": { "value": "", "mask": "custom", "pattern": "AA-9999", "store": "formatted", "guide": "on", "placeholder": "Order code" }
+      },
+      {
+        "slug": "raw",
+        "name": "Stored raw",
+        "description": "Store raw: the column gets the digits alone while the field still shows the mask — watch getOutputs.",
+        "props": { "value": "(212) 555-0100", "mask": "phone-us", "pattern": "", "store": "raw", "guide": "on", "placeholder": "" }
+      },
+      {
+        "slug": "lossy",
+        "name": "A value that does not fit",
+        "description": "An extension typed into a phone column by hand. The mask shows what it can read and says the rest does not fit; nothing is rewritten until someone edits it.",
+        "props": { "value": "555.123.4567 x12", "mask": "phone-us", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "" }
+      }
+    ]
   }
 }

@@ -6,18 +6,6 @@ order: 5
 
 # API reference
 
-<!--
-  Do not write the property tables by hand.
-
-  `props-table` renders from what the hub parsed out of
-  ControlManifest.Input.xml at the release being viewed, so it cannot drift from
-  the control. A hand-written table is wrong the first time somebody adds a
-  property and forgets this file, and a reader has no way to tell.
-
-  kind: input | bound | output | dataset | dataset_column
-  Omit `kind` to render every property in one table.
--->
-
 ## Input properties
 
 ::props-table{kind=input}
@@ -32,5 +20,15 @@ order: 5
 
 ## Notes
 
-Use this section for what the manifest cannot express — the accepted values of a
-free-text property, the format of a JSON input, which combinations conflict.
+- **Blank means the default.** An unset **Mask** is the US phone, an unset
+  **Store as** is formatted, an unset **Guide** is on. The control decides
+  this, not the manifest's default value, which some hosts apply and others do
+  not.
+- **An empty value is written as a cleared column**, not as an empty string.
+- **A partial value is written.** **Is valid** says whether it is complete; the
+  column says what was typed.
+- **Is valid is notified when it changes**, including once on load when the
+  stored value is partial or does not fit the mask.
+- **A custom pattern with no `9`, `a`, `A` or `*` accepts nothing.** The field
+  then shows the column as it is, takes no typing, and says so — it never
+  writes.

@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="InputMask"
-           version="0.1.0"
+           version="0.0.1"
            display-name-key="InputMask_Name"
            description-key="InputMask_Desc"
            control-type="standard">
@@ -49,12 +49,103 @@
       The platform still resolves these against the .resx for the maker's
       properties pane, so the keys must exist there either way.
     -->
+    <!--
+      Text and Phone: the two single-line formats a mask is for. A Phone column
+      is where the platform's retired Input Mask control was most often put,
+      and a type group is the only way one property binds both. Email and URL
+      are left out on purpose — neither has a fixed shape, and an email input
+      has no cursor to put back (`setSelectionRange` throws on one).
+    -->
+    <type-group name="maskable">
+      <type>SingleLine.Text</type>
+      <type>SingleLine.Phone</type>
+    </type-group>
+
     <property name="value"
               display-name-key="value_Name"
               description-key="value_Desc"
-              of-type="SingleLine.Text"
+              of-type-group="maskable"
               usage="bound"
               required="true" />
+
+    <!--
+      The shape. A preset, or `custom` with `pattern` below. The code decides
+      what blank means (the US phone), because a default-value on an optional
+      property is applied by some hosts and not by others.
+    -->
+    <property name="mask"
+              display-name-key="mask_Name"
+              description-key="mask_Desc"
+              of-type="Enum"
+              usage="input"
+              required="false"
+              default-value="phone-us">
+      <value name="phone-us" display-name-key="mask_PhoneUs">phone-us</value>
+      <value name="zip" display-name-key="mask_Zip">zip</value>
+      <value name="zip4" display-name-key="mask_Zip4">zip4</value>
+      <value name="postal-ca" display-name-key="mask_PostalCa">postal-ca</value>
+      <value name="ssn" display-name-key="mask_Ssn">ssn</value>
+      <value name="custom" display-name-key="mask_Custom">custom</value>
+    </property>
+
+    <!--
+      Read only when `mask` is `custom`: 9 a digit, a a letter, A a letter made
+      upper-case, * a letter or digit, \ before a character makes it a literal.
+      The modern form designer caps a static input at 100 characters, far more
+      than any mask needs.
+    -->
+    <property name="pattern"
+              display-name-key="pattern_Name"
+              description-key="pattern_Desc"
+              of-type="SingleLine.Text"
+              usage="input"
+              required="false" />
+
+    <!--
+      What the column holds. `formatted` is what views, search and exports
+      already show; `raw` is the typed characters alone, for an integration
+      that wants digits. Either shape already in the column is read.
+    -->
+    <property name="store"
+              display-name-key="store_Name"
+              description-key="store_Desc"
+              of-type="Enum"
+              usage="input"
+              required="false"
+              default-value="formatted">
+      <value name="formatted" display-name-key="store_Formatted">formatted</value>
+      <value name="raw" display-name-key="store_Raw">raw</value>
+    </property>
+
+    <!--
+      The `(___) ___-____` guide in an empty, focused field. An Enum rather
+      than a TwoOptions because a TwoOptions cannot default to on.
+    -->
+    <property name="guide"
+              display-name-key="guide_Name"
+              description-key="guide_Desc"
+              of-type="Enum"
+              usage="input"
+              required="false"
+              default-value="on">
+      <value name="on" display-name-key="guide_On">on</value>
+      <value name="off" display-name-key="guide_Off">off</value>
+    </property>
+
+    <!--
+      Whether the value fills the mask — true for a complete value and for an
+      empty one, false for a partial one or a stored value the mask cannot
+      read without losing part of it. For a canvas app to gate its Save on:
+      a form's save cannot be blocked from a control. Do not bind it on a
+      model-driven form — binding an output in the classic designer breaks the
+      form's save (measured on pcf-code-editor 1.3.0). Outputs are permanent
+      API: a formula may bind them.
+    -->
+    <property name="isValid"
+              display-name-key="isValid_Name"
+              description-key="isValid_Desc"
+              of-type="TwoOptions"
+              usage="output" />
 
     <property name="placeholder"
               display-name-key="placeholder_Name"

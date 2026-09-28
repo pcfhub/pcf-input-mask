@@ -225,7 +225,15 @@ function disposeAll() {
     }
 }
 
-function mount(options) {
+/*
+ * Every input the manifest declares, unset. The platform hands an unset input
+ * over as `{ raw: null }`, never as a missing key, so a suite that omitted
+ * them would be testing a context no host builds.
+ */
+const INPUTS = { mask: null, pattern: null, store: null, guide: null };
+
+function mount(given) {
+    const options = { ...given, inputs: { ...INPUTS, ...(given.inputs || {}) } };
     const container = dom.createElement('div');
     /*
      * What is the *instance's* rather than the render's: the call log, the
@@ -297,332 +305,231 @@ if (typeof registration.ctor !== 'function') {
 }
 
 /* ======================================================================== *
- *  WORKED EXAMPLE — replace everything below with assertions about your own
- *  control. It exercises the scaffolded field control, whose whole job is to
- *  render one text input and honour the states a form puts it in.
- *
- *  It comes in two halves because the scaffolded control does. A **standard**
- *  control writes into the container it was handed, so the assertions read the
- *  DOM it built. A **virtual** one returns an element, so they read the props
- *  it passed down — which is the better test of the two: the props are the
- *  control's decisions, where the DOM is one rendering of them.
- *
- *  Keep the half that matches your control and delete the other. What follows
- *  both halves applies either way.
+ *  THE DECISION MODULES — pattern.ts, format.ts, verdict.ts, loaded from
+ *  source. What a mask is, how an edit is read back, what is stored and when
+ *  a value is complete. The bundle sections below prove index.ts asks these
+ *  the right questions.
  * ======================================================================== */
 
-const plain = mount({});
+const { createLoader } = require('./modules');
+const load = createLoader({
+    root: path.join(root, 'InputMask'),
+    forbid: [[/(^|\/)index$/, 'the entry point'], [/generated/, 'the manifest types'], [/(^|\/)probe$/, 'the probe']],
+});
 
-if (plain.element !== undefined) {
-    /* ------------------------------------------------- a virtual control */
+const P = load('pattern');
+const F = load('format');
+const V = load('verdict');
 
+const phone = P.resolve('phone-us', null).mask;
+const digits = (text) => F.extract(phone, text).join('');
+
+{
+    check('a blank mask is the US phone — the code decides what blank means', P.resolve('', null).pattern === '(999) 999-9999' && P.resolve(null, null).pattern === '(999) 999-9999');
+    check('a preset this version does not know is read as blank, not refused', P.resolve('phone-uk', null).ok === true && P.resolve('phone-uk', null).pattern === '(999) 999-9999');
+    check('an empty custom pattern is a named state, not a throw', JSON.stringify(P.resolve('custom', '  ')) === '{"ok":false,"reason":"empty"}');
+    check('so is a custom pattern with no slot in it', P.resolve('custom', 'ID-').reason === 'no-slots');
     check(
-        'hands the component the value the platform supplied',
-        plain.props().value === 'Contoso Ltd',
-        JSON.stringify(plain.props().value),
+        '9 a A * are slots, and a backslash makes the next character a literal',
+        JSON.stringify(P.parse('\\9aA*-').tokens.map((t) => (t.kind === 'slot' ? t.accept + (t.upper ? '^' : '') : t.char))) === '["9","letter","letter^","alnum","-"]',
     );
+    check('a letter is a character with case — accents and other alphabets count, digits and CJK do not', P.isLetter('é') && P.isLetter('Ж') && !P.isLetter('7') && !P.isLetter('中'));
+    check('an all-digit mask asks for the number pad, a postal code does not', phone.numeric && !P.resolve('postal-ca').mask.numeric);
+    check('the guide is the pattern with every slot drawn as _', P.guide(phone) === '(___) ___-____');
+
+    check('a stored raw value is read', digits('5551234567') === '5551234567');
+    check('so is a stored formatted one', digits('(555) 123-4567') === '5551234567');
+    check('and one typed by hand in another shape', digits('555.123.4567') === '5551234567');
+    check('a leading + and country code is dropped when the number is too long for the mask', digits('+1 (555) 123-4567') === '5551234567');
+    check('without the +, a long number keeps its first digits — no country code is guessed', digits('15551234567') === '1555123456');
+    check('a literal that is itself a digit is read as the literal in a formatted value', F.extract(P.parse('+1 (999) 999'), '+1 (555) 123').join('') === '555123');
+    check('an A slot upper-cases what it takes', F.render(P.resolve('postal-ca').mask, F.extract(P.resolve('postal-ca').mask, 'k1a 0b1')) === 'K1A 0B1');
+
+    check('literals between characters are drawn, trailing ones are not', F.render(phone, ['5', '5', '5']) === '(555' && F.render(phone, ['5', '5', '5', '1']) === '(555) 1');
+    check('an empty value draws nothing, not a lone (', F.render(phone, []) === '');
+    check('the cursor before the first character sits after the leading literal', F.caretAt(phone, ['5'], 0) === 1);
+
+    check('a stored value with content the mask drops is lossy', F.isLossy(phone, '555.123.4567 x12', F.extract(phone, '555.123.4567 x12')));
+    check('the mask’s own punctuation lost is not', !F.isLossy(phone, '(555) 123-4567', F.extract(phone, '(555) 123-4567')));
+    check('nor is a country code dropped after a +', !F.isLossy(phone, '+1 (555) 123-4567', F.extract(phone, '+1 (555) 123-4567')));
+
+    // One edit, read back from the field: (old display, new text, caret after).
+    const edit = (prev, text, caret, inputType) => {
+        const chars = F.extract(phone, prev);
+        const r = F.applyInput(phone, chars, F.render(phone, chars), text, caret, inputType);
+        return `${F.render(phone, r.chars)}@${F.caretAt(phone, r.chars, r.k)}`;
+    };
+
+    check('Backspace just after ") " removes the digit before it, not only the space', edit('(555) 1', '(555)1', 5, 'deleteContentBackward') === '(551@3', edit('(555) 1', '(555)1', 5, 'deleteContentBackward'));
+    check('Delete just before ") " removes the digit after it', edit('(555) 12', '(555 12', 4, 'deleteContentForward') === '(555) 2@4', edit('(555) 12', '(555 12', 4, 'deleteContentForward'));
+    check('a digit typed in the middle shifts the rest and keeps the cursor after it', edit('(555) 12', '(5955) 12', 3, 'insertText') === '(595) 512@3', edit('(555) 12', '(5955) 12', 3, 'insertText'));
+    check('a letter typed into a digit slot is refused and the cursor stays', edit('(555', '(555x', 5, 'insertText') === '(555@4', edit('(555', '(555x', 5, 'insertText'));
+    check('a digit typed at the end of a complete value is refused', edit('(555) 123-4567', '(555) 123-45678', 15, 'insertText') === '(555) 123-4567@14');
+    check('a paste in the middle flows into the slots', edit('(555', '(55125', 5, 'insertFromPaste') === '(551) 25@7', edit('(555', '(55125', 5, 'insertFromPaste'));
+    check('a paste replacing everything is read as a whole value', edit('(555', '+1 (212) 555-0100', 17, 'insertFromPaste') === '(212) 555-0100@14', edit('(555', '+1 (212) 555-0100', 17, 'insertFromPaste'));
+    check('of two identical digits, the cursor decides which was typed', edit('(555', '(5555', 2, 'insertText') === '(555) 5@2', edit('(555', '(5555', 2, 'insertText'));
+
+    check('empty is its own verdict, not a failure', V.verdictOf(phone, []) === 'empty');
+    check('complete and incomplete by slot count', V.verdictOf(phone, Array.from('5551234567')) === 'complete' && V.verdictOf(phone, ['5']) === 'incomplete');
+    check('an empty value is stored as null, not ""', V.stored(phone, [], 'formatted') === null);
+    check('formatted stores the display, raw the characters', V.stored(phone, Array.from('555'), 'formatted') === '(555' && V.stored(phone, Array.from('555'), 'raw') === '555');
+    check('a blank or unknown store is formatted', V.storeOf(null) === 'formatted' && V.storeOf('digits') === 'formatted' && V.storeOf(' raw ') === 'raw');
+}
+
+/* ======================================================================== *
+ *  THE CONTROL — the bundle, typed into with dom.user the way a person types.
+ * ======================================================================== */
+
+const field = (handle) => handle.find('input');
+const message = (handle) => handle.find('.InputMask-message');
+const shown = (handle) => (message(handle).hidden ? '' : message(handle).textContent);
+
+{
+    const stored = mount({ value: '5551234567' });
+
+    check('a stored raw value is shown in the mask', field(stored).value === '(555) 123-4567', field(stored).value);
+    check('and reading it writes nothing', stored.notifications() === 0, String(stored.notifications()));
+    check('an all-digit mask asks for the number pad and the browser’s phone autofill', field(stored).inputMode === 'numeric' && field(stored).getAttribute('autocomplete') === 'tel-national');
+
+    const typed = mount({ value: null });
+
+    dom.user.type(field(typed), '5551234567');
+    check('typing fills the mask as it goes', field(typed).value === '(555) 123-4567' && field(typed).selectionStart === 14, `${field(typed).value} @${field(typed).selectionStart}`);
+    check('and hands back the formatted value', typed.outputs().value === '(555) 123-4567' && typed.outputs().isValid === true, JSON.stringify(typed.outputs()));
+    check('one notification per character that changed the value', typed.notifications() === 10, String(typed.notifications()));
+
+    const raw = mount({ value: null, inputs: { store: 'raw' } });
+
+    dom.user.type(field(raw), '5551234567');
+    check('store raw hands back the characters alone, the box still masked', raw.outputs().value === '5551234567' && field(raw).value === '(555) 123-4567', JSON.stringify(raw.outputs()));
+
+    const refused = mount({ value: '(555' });
+
+    // One notification already: an incomplete stored value reports isValid
+    // false on load, so a canvas app gating Save knows before anyone types.
+    check('an incomplete stored value reports isValid false on load, once', refused.notifications() === 1 && refused.outputs().isValid === false);
+
+    field(refused).setSelectionRange(4, 4);
+    dom.user.type(field(refused), 'x');
+    check('a letter in a phone mask changes nothing and notifies nothing', field(refused).value === '(555' && field(refused).selectionStart === 4 && refused.notifications() === 1);
+
+    const back = mount({ value: '(555) 1' });
+
+    field(back).setSelectionRange(6, 6);
+    dom.user.backspace(field(back));
+    check('Backspace after ") " deletes a digit rather than appearing to do nothing', field(back).value === '(551' && field(back).selectionStart === 3, `${field(back).value} @${field(back).selectionStart}`);
+
+    const middle = mount({ value: '(555) 12' });
+
+    field(middle).setSelectionRange(2, 2);
+    dom.user.type(field(middle), '9');
+    check('a digit typed in the middle keeps the cursor after it, not at the end', field(middle).value === '(595) 512' && field(middle).selectionStart === 3, `${field(middle).value} @${field(middle).selectionStart}`);
+
+    const pasted = mount({ value: null });
+
+    dom.user.paste(field(pasted), '+1 (212) 555-0100');
+    check('a pasted international number fills a national mask', field(pasted).value === '(212) 555-0100', field(pasted).value);
+
+    const filled = mount({ value: null });
+
+    dom.user.autofill(field(filled), '212 555 0100');
+    check('autofill — no beforeinput, no inputType — is masked too', field(filled).value === '(212) 555-0100' && filled.outputs().value === '(212) 555-0100', field(filled).value);
+
+    const composed = mount({ value: null });
+
+    dom.user.compose(field(composed), ['5', '55'], '555');
+    check('a composition is left alone until it ends, then masked once', field(composed).value === '(555' && composed.notifications() === 1, `${field(composed).value} / ${composed.notifications()}`);
 
     /*
-     * The information bug. A user denied read access gets `raw === null`, which
-     * is indistinguishable from an empty column unless `security.readable` is
-     * checked — so an unchecked control renders "no value" where the truth is
-     * "not allowed to see it".
+     * The late echo: the platform hands back an earlier keystroke after a
+     * later one (measured 2026-09-13). The box must keep what was typed, and
+     * the cursor where it was.
      */
+    const echoed = mount({ value: null });
+
+    dom.user.type(field(echoed), '555');
+    echoed.update({ value: '(555' });
+    echoed.update({ value: '(55' });
+    echoed.update({ value: '(5' });
+    check('a late echo of an earlier keystroke changes nothing', field(echoed).value === '(555' && field(echoed).selectionStart === 4 && echoed.outputs().value === '(555', `${field(echoed).value} @${field(echoed).selectionStart}`);
+
+    echoed.update({ value: '2125550100' });
+    check('a value the control never wrote is taken, and masked', field(echoed).value === '(212) 555-0100', field(echoed).value);
+
+    const cleared = mount({ value: '(555' });
+
+    field(cleared).select();
+    dom.user.backspace(field(cleared));
+    check('clearing the field writes null, not ""', cleared.outputs().value === null && field(cleared).value === '', JSON.stringify(cleared.outputs()));
+}
+
+{
+    const partial = mount({ value: null });
+
+    dom.user.type(field(partial), '555');
+    check('no message while the value is being typed', shown(partial) === '');
+
+    field(partial).blur();
+    check('an incomplete value is written, and said to be incomplete once the user leaves', partial.outputs().value === '(555' && shown(partial) === 'resx:InputMask_Incomplete' && field(partial).getAttribute('aria-invalid') === 'true', shown(partial));
+    check('and isValid is false', partial.outputs().isValid === false);
+
+    const empty = mount({ value: null });
+
+    field(empty).blur();
+    check('an empty value is valid — whether it may be empty is the column’s requirement', empty.outputs().isValid === true && shown(empty) === '');
+
+    const lossy = mount({ value: '555.123.4567 x12' });
+
+    check('a stored value the mask cannot read whole says so', shown(lossy) === 'resx:InputMask_Lossy', shown(lossy));
+    check('reports isValid false once, and leaves the stored value alone', lossy.notifications() === 1 && lossy.outputs().isValid === false && lossy.outputs().value === '555.123.4567 x12', JSON.stringify(lossy.outputs()));
+
+    const both = mount({ value: '555.123.4567 x12', error: true });
+
+    check('the platform’s own validation outranks the control’s', shown(both) === host.DEFAULTS.errorMessage, shown(both));
+
+    const guided = mount({ value: null, placeholder: 'Phone' });
+
+    check('the maker’s placeholder shows while the field is not focused', field(guided).placeholder === 'Phone');
+    field(guided).focus();
+    check('the guide replaces it while an empty field has focus', field(guided).placeholder === '(___) ___-____', field(guided).placeholder);
+    field(guided).blur();
+
+    const unguided = mount({ value: null, placeholder: 'Phone', inputs: { guide: 'off' } });
+
+    field(unguided).focus();
+    check('guide off keeps the maker’s placeholder', field(unguided).placeholder === 'Phone');
+    field(unguided).blur();
+}
+
+{
+    const custom = mount({ value: null, inputs: { mask: 'custom', pattern: 'AA-9999' } });
+
+    dom.user.type(field(custom), 'ab1234');
+    check('a custom pattern upper-cases its A slots and draws its literal', field(custom).value === 'AB-1234' && custom.outputs().value === 'AB-1234', field(custom).value);
+    check('and a mixed mask asks for the full keyboard, with no autofill name', field(custom).inputMode === 'text' && field(custom).getAttribute('autocomplete') === '');
+
+    const broken = mount({ value: 'kept as it is', inputs: { mask: 'custom', pattern: '' } });
+
+    check('a custom pattern that accepts nothing tells the maker, shows the column and takes nothing', shown(broken) === 'resx:InputMask_BadPattern' && field(broken).disabled === true && field(broken).value === 'kept as it is' && broken.notifications() === 0);
+
+    const switched = mount({ value: '12345' });
+
+    switched.update({ value: '12345', inputs: { mask: 'zip', pattern: null, store: null, guide: null } });
+    check('a mask changed on a mounted control re-reads the value under the new mask', field(switched).value === '12345' && shown(switched) === '', field(switched).value);
+}
+
+{
     const denied = mount({ security: 'no-access', value: null });
 
-    check('a column the user cannot read is marked unreadable', denied.props().readable === false);
-
-    check(
-        'and the message it will show comes from the .resx, not from the source',
-        denied.props().noAccessText === 'resx:InputMask_NoAccess',
-        denied.props().noAccessText,
-    );
-
-    /*
-     * Two independent reasons to be read-only, and conflating them is a real
-     * bug: the form's `isControlDisabled` and the column's `security.editable`.
-     * This asserts the second on a form that is otherwise editable.
-     */
-    check(
-        'a read-only column disables the control on an editable form',
-        mount({ security: 'read-only' }).props().disabled === true,
-    );
-
-    /*
-     * A column with no profile arrives as an *object* with `secured: false` on
-     * a real form (measured 2026-09-13), and `undefined` on other hosts. A read
-     * of `security.readable` as a boolean is right on both — and wrong on the
-     * third shape, an unmapped optional bound property's `{}`. Only an
-     * explicit `false` is a denial.
-     */
-    check(
-        'an unsecured column reported as an object, not undefined, is readable and editable',
-        mount({ security: 'unsecured' }).props().readable === true
-            && mount({ security: 'unsecured' }).props().disabled === false,
-    );
-
-    /*
-     * The platform's own validation. A failing business rule is silent inside a
-     * code component unless the control passes it on.
-     */
-    check(
-        'a validation error reaches the component',
-        mount({ error: true }).props().errorMessage === host.DEFAULTS.errorMessage,
-        mount({ error: true }).props().errorMessage,
-    );
-
-    check('and there is none to show when the platform reported none', plain.props().errorMessage === null);
-
-    /*
-     * The canvas/model-driven split, which is what every `?.` in the control is
-     * about. A canvas app publishes no column metadata, and a control that
-     * requires it breaks on a host half its users are on.
-     */
-    check(
-        'does not invent a maxLength on a host that publishes no column metadata',
-        mount({ host: 'canvas' }).props().maxLength === undefined,
-        String(mount({ host: 'canvas' }).props().maxLength),
-    );
-
-    /*
-     * The accessible name comes from the maker's label for this field, not from
-     * the .resx — the resource string cannot know what the field is called on
-     * this form, so it is the fallback rather than the default.
-     */
-    check("passes down the form's own label", plain.props().label === 'Account name');
-
-    check('and a fallback for a form that gives none', plain.props().fallbackLabel === 'resx:InputMask_Name');
-
-    // The edit path: the component reports a change, the control notifies, and
-    // what it hands back is what the platform writes to the column.
-    const edited = mount({});
-
-    edited.props().onChange('Fabrikam');
-
-    check('an edit notifies the platform exactly once', edited.notifications() === 1);
-
-    check(
-        'and getOutputs hands back what was typed',
-        edited.outputs().value === 'Fabrikam',
-        JSON.stringify(edited.outputs()),
-    );
-
-    /*
-     * The platform echoes writes back late and **out of order** — typing "pase
-     * laur" on a real form produced passes carrying "pase laur", "pase lau",
-     * "pase laur". A control that adopts any value differing from the last one
-     * the platform sent hands the late echo down as a new prop, the
-     * component's resync effect puts it in the box, and the last character
-     * typed is gone.
-     */
-    const echoed = mount({ value: '' });
-
-    echoed.props().onChange('ab');
-    echoed.props().onChange('abc');
-    echoed.update({ value: 'abc' });
-    echoed.update({ value: 'ab' });
-
-    check(
-        'a late echo of an earlier keystroke is not handed down as a new value',
-        echoed.update({ value: 'ab' }).props.value === 'abc',
-        JSON.stringify(echoed.update({ value: 'ab' }).props.value),
-    );
-
-    check(
-        'but a value the control never wrote is taken from the form',
-        echoed.update({ value: 'Changed by a script' }).props.value === 'Changed by a script',
-    );
-} else {
-    /* ------------------------------------------------ a standard control */
-
-    check(
-        'renders an input inside the field surface',
-        Boolean(plain.find('.InputMask-field')) && Boolean(plain.find('input')),
-    );
-
-    check(
-        'shows the value the platform supplied',
-        plain.find('input') && plain.find('input').value === 'Contoso Ltd',
-        plain.find('input') && plain.find('input').value,
-    );
-
-    /*
-     * The accessible name comes from the maker's label for this field, not from
-     * the .resx — the resource string cannot know what the field is called on
-     * this form, so it is the fallback rather than the default.
-     */
-    check(
-        "the input's accessible name is the form's own label",
-        plain.find('input') && plain.find('input').getAttribute('aria-label') === 'Account name',
-        plain.find('input') && plain.find('input').getAttribute('aria-label'),
-    );
-
-    check(
-        'and falls back to the .resx when the form gives no label',
-        mount({ label: '' }).find('input').getAttribute('aria-label') === 'resx:InputMask_Name',
-    );
-
-    /*
-     * The information bug. A user denied read access gets `raw === null`, which
-     * is indistinguishable from an empty column unless `security.readable` is
-     * checked — so an unchecked control renders "no value" where the truth is
-     * "not allowed to see it".
-     */
-    const denied = mount({ security: 'no-access', value: null });
-
-    check(
-        'a column the user cannot read says so rather than rendering as empty',
-        denied.find('.InputMask-message')
-            && denied.find('.InputMask-message').textContent === 'resx:InputMask_NoAccess',
-        denied.find('.InputMask-message') && denied.find('.InputMask-message').textContent,
-    );
-
-    check(
-        'and hides the field surface rather than leaving an empty box above the message',
-        denied.find('.InputMask-field') && denied.find('.InputMask-field').hidden === true,
-    );
-
-    /*
-     * Two independent reasons to be read-only, and conflating them is a real
-     * bug: the form's `isControlDisabled` and the column's `security.editable`.
-     */
-    check(
-        'a read-only column disables the input on an editable form',
-        mount({ security: 'read-only' }).find('input').disabled === true,
-    );
-
-    // The same three shapes — see the virtual half above.
-    check(
-        'an unsecured column reported as an object, not undefined, renders the field enabled',
-        mount({ security: 'unsecured' }).find('.InputMask-field').hidden === false
-            && mount({ security: 'unsecured' }).find('input').disabled === false,
-    );
-
-    check(
-        'and the disabled state reaches the surface, not just the input',
-        mount({ security: 'read-only' }).container.classList.contains('InputMask--disabled'),
-    );
-
-    /*
-     * The platform's own validation. A failing business rule is silent inside a
-     * code component unless the control gives it somewhere to go.
-     */
-    const invalid = mount({ error: true });
-
-    check(
-        'a validation error is shown to the user',
-        invalid.find('.InputMask-message')
-            && invalid.find('.InputMask-message').textContent === host.DEFAULTS.errorMessage,
-        invalid.find('.InputMask-message') && invalid.find('.InputMask-message').textContent,
-    );
-
-    check(
-        'and is announced rather than only coloured',
-        invalid.find('input') && invalid.find('input').getAttribute('aria-invalid') === 'true',
-    );
-
-    /*
-     * The canvas/model-driven split, which is what every `?.` in the control is
-     * about. A canvas app publishes no column metadata and no theme.
-     */
-    const canvas = mount({ host: 'canvas' });
-
-    check('renders on a host that publishes no column metadata', Boolean(canvas.find('input')));
-
-    check(
-        'does not invent a maxLength the host never supplied',
-        canvas.find('input') && !canvas.find('input').maxLength,
-        canvas.find('input') && String(canvas.find('input').maxLength),
-    );
-
-    check(
-        'takes no position on the theme when the host publishes none',
-        !canvas.container.classList.contains('InputMask--dark'),
-        canvas.container.className,
-    );
-
-    check(
-        'and follows the host theme where there is one',
-        mount({ host: 'model-driven', dark: true }).container.classList.contains('InputMask--dark'),
-    );
-
-    /*
-     * The edit path, end to end: the user types, the control notifies, and what
-     * it hands back is what the platform will write to the column.
-     */
-    const edited = mount({ value: null });
-    const input = edited.find('input');
-
-    // `dom.user` types the way a person does — beforeinput, the edit at the
-    // cursor, input — rather than assigning `value` and firing a bare event,
-    // which is a sequence no browser produces. See `dev/dom.js`.
-    dom.user.type(input, 'Fabrikam');
-
-    check(
-        'typing notifies the platform once per keystroke',
-        edited.notifications() === 'Fabrikam'.length,
-        String(edited.notifications()),
-    );
-
-    check(
-        'and getOutputs hands back what was typed',
-        edited.outputs().value === 'Fabrikam',
-        JSON.stringify(edited.outputs()),
-    );
-
-    /*
-     * `updateView` runs on every change to any bound value, including ones this
-     * control caused itself — and the platform's echoes of those changes arrive
-     * late and **out of order** (typing "pase laur" on a real form produced
-     * passes carrying "pase laur", "pase lau", "pase laur"). A browser moves the
-     * caret to the end whenever `value` is assigned something *different* from
-     * what the box holds, so a control that takes a late echo loses the
-     * characters typed after it and throws the user to the end of the field.
-     *
-     * Typed in the middle on purpose: at the end of the field a caret jump is
-     * invisible, which is how this passes a suite that only ever appends.
-     */
-    const typing = mount({ value: 'Contoso' });
-    const held = typing.find('input');
-
-    held.setSelectionRange(3, 3);
-    dom.user.type(held, 'xyz');
-
-    // Every echo of what was typed — the earliest one last, as measured.
-    typing.update({ value: 'Conxyztoso' });
-    typing.update({ value: 'Conxytoso' });
-    typing.update({ value: 'Conxtoso' });
-
-    check(
-        'a late echo of an earlier keystroke does not undo what was typed after it',
-        held.value === 'Conxyztoso',
-        held.value,
-    );
-
-    check(
-        'and leaves the caret where the user was typing',
-        held.selectionStart === 6 && held.selectionEnd === 6,
-        `${held.selectionStart}–${held.selectionEnd}`,
-    );
-
-    check(
-        'and getOutputs still hands back the latest value, not the echo',
-        typing.outputs().value === 'Conxyztoso',
-        JSON.stringify(typing.outputs()),
-    );
-
-    /*
-     * The other half of the guard: a value the control never wrote is the
-     * form's — a script, a business rule, a refresh — and must win, or the
-     * control shows a value the column no longer holds.
-     */
-    typing.update({ value: 'Changed by a script' });
-
-    check(
-        'a value the control never wrote is taken from the form',
-        held.value === 'Changed by a script',
-        held.value,
-    );
+    check('a column the user cannot read says so, and hides the field', shown(denied) === 'resx:InputMask_NoAccess' && denied.find('.InputMask-field').hidden === true);
+    check('a read-only column disables the input on an editable form', mount({ security: 'read-only', value: '5551234567' }).find('input').disabled === true);
+    check('a disabled field takes no typing', (() => {
+        const off = mount({ disabled: true, value: null });
+        dom.user.type(field(off), '5');
+        return field(off).value === '' && off.notifications() === 0;
+    })());
+    check('renders on a host that publishes no column metadata', Boolean(mount({ host: 'canvas', value: '5551234567' }).find('input')));
+    check('the accessible name is the form’s own label', field(mount({ value: null })).getAttribute('aria-label') === 'Account name');
 }
 
 /* ------------------------------------------------------------ either shape */

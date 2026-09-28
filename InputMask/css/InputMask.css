@@ -214,6 +214,10 @@
     font-size: var(--InputMask-font-size);
     line-height: var(--InputMask-line-height);
     font-weight: var(--fontWeightRegular, 400);
+    /* Every digit the same width, so the literals do not shuffle sideways as
+       a mask fills and the guide's underscores line up under what replaces
+       them. Segoe UI, the form's font, has tabular figures. */
+    font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
 }
 

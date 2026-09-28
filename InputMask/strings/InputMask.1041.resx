@@ -75,13 +75,13 @@
     <value>Input Mask</value>
   </data>
   <data name="InputMask_Desc" xml:space="preserve">
-    <value>Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.</value>
+    <value>電話番号、郵便番号、ID などをパターンに沿って入力し、列の形式を保ちます。</value>
   </data>
   <data name="value_Name" xml:space="preserve">
     <value>値</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>このコントロールが読み書きする列。</value>
+    <value>このコントロールがマスクするテキスト列または電話列。</value>
   </data>
   <data name="placeholder_Name" xml:space="preserve">
     <value>プレースホルダー</value>
@@ -91,5 +91,74 @@
   </data>
   <data name="InputMask_NoAccess" xml:space="preserve">
     <value>この値にアクセスする権限がありません。</value>
+  </data>
+  <data name="mask_Name" xml:space="preserve">
+    <value>マスク</value>
+  </data>
+  <data name="mask_Desc" xml:space="preserve">
+    <value>値の形式。プリセット、または下のパターンを使う [カスタム]。</value>
+  </data>
+  <data name="mask_PhoneUs" xml:space="preserve">
+    <value>米国の電話番号 (999) 999-9999</value>
+  </data>
+  <data name="mask_Zip" xml:space="preserve">
+    <value>ZIP コード 99999</value>
+  </data>
+  <data name="mask_Zip4" xml:space="preserve">
+    <value>ZIP+4 99999-9999</value>
+  </data>
+  <data name="mask_PostalCa" xml:space="preserve">
+    <value>カナダの郵便番号 A9A 9A9</value>
+  </data>
+  <data name="mask_Ssn" xml:space="preserve">
+    <value>SSN 999-99-9999</value>
+  </data>
+  <data name="mask_Custom" xml:space="preserve">
+    <value>カスタム パターン</value>
+  </data>
+  <data name="pattern_Name" xml:space="preserve">
+    <value>カスタム パターン</value>
+  </data>
+  <data name="pattern_Desc" xml:space="preserve">
+    <value>[マスク] が [カスタム] のときに使用します。9 は数字、a は文字、A は大文字にする文字、* は文字または数字。文字の前の \ はその文字をリテラルにします。例: AA-9999。</value>
+  </data>
+  <data name="store_Name" xml:space="preserve">
+    <value>保存形式</value>
+  </data>
+  <data name="store_Desc" xml:space="preserve">
+    <value>[書式付き] はユーザーに見える値を保存し、[未加工] は入力された文字だけを保存します。</value>
+  </data>
+  <data name="store_Formatted" xml:space="preserve">
+    <value>書式付き</value>
+  </data>
+  <data name="store_Raw" xml:space="preserve">
+    <value>未加工の文字のみ</value>
+  </data>
+  <data name="guide_Name" xml:space="preserve">
+    <value>ガイド</value>
+  </data>
+  <data name="guide_Desc" xml:space="preserve">
+    <value>空のフィールドにフォーカスがある間、(___) ___-____ のようなマスクの形を表示します。</value>
+  </data>
+  <data name="guide_On" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="guide_Off" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="isValid_Name" xml:space="preserve">
+    <value>有効</value>
+  </data>
+  <data name="isValid_Desc" xml:space="preserve">
+    <value>値が空、またはマスクを満たしているときに true。キャンバス アプリで保存を制御するためのもので、モデル駆動型フォームではバインドしないでください。</value>
+  </data>
+  <data name="InputMask_Incomplete" xml:space="preserve">
+    <value>未完了: {1} 文字中 {0} 文字。</value>
+  </data>
+  <data name="InputMask_Lossy" xml:space="preserve">
+    <value>保存されている値「{0}」はこのマスクに合いません。編集すると書式が変更されます。</value>
+  </data>
+  <data name="InputMask_BadPattern" xml:space="preserve">
+    <value>このフィールドのカスタム パターンが空か、9、a、A、* を含まないため、何も入力できません。</value>
   </data>
 </root>
