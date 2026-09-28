@@ -314,7 +314,7 @@ if (typeof registration.ctor !== 'function') {
 const { createLoader } = require('./modules');
 const load = createLoader({
     root: path.join(root, 'InputMask'),
-    forbid: [[/(^|\/)index$/, 'the entry point'], [/generated/, 'the manifest types'], [/(^|\/)probe$/, 'the probe']],
+    forbid: [[/(^|\/)index$/, 'the entry point'], [/generated/, 'the manifest types']],
 });
 
 const P = load('pattern');

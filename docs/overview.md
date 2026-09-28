@@ -9,6 +9,8 @@ order: 1
 Type into a pattern — phone numbers, postal codes, IDs — and the column keeps
 its shape.
 
+::image{src=media/states-light.png alt="Seven Input Mask fields: a US phone in the mask; a partial (555 with Incomplete: 3 of 10 characters in red; 555-0152 saved before the mask, with a grey note; a Canadian postal code K1A 0B1; an order code AB-1234; a read-only phone; and an empty focused field showing the guide (___) ___-____."}
+
 The platform's own *Input Mask* control was deprecated in January 2023 and has
 been unsupported since April 2024. This is a replacement you can install
 today, for model-driven forms and canvas apps.

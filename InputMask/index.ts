@@ -3,10 +3,6 @@ import { Mask, guide, resolve } from './pattern';
 import { applyInput, caretAt, charsBefore, extract, isLossy, render } from './format';
 import { History, Snapshot, empty, record, redo, undo } from './history';
 import { Store, neededLength, stored, storeOf, verdictOf } from './verdict';
-import { Probe, createProbe } from './probe';
-
-/** The 0.0.1 probe build. False, and `probe.ts` deleted, before 0.1.0. */
-const PROBE = true;
 
 /** How many of this control's own writes an echo is recognised among. */
 const ECHO_MEMORY = 32;
@@ -65,7 +61,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     private composing = false;
     private focused = false;
     private lastValid: boolean | undefined = undefined;
-    private pendingNotify = false;
 
     /**
      * Every value this control wrote, newest last. The platform echoes writes
@@ -82,8 +77,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     /** The last context, for the handlers that redraw between renders. */
     private context!: ComponentFramework.Context<IInputs>;
-
-    private probe: Probe | null = null;
 
     public init(
         context: ComponentFramework.Context<IInputs>,
@@ -117,10 +110,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         this.container.classList.add('InputMask');
         this.container.append(this.field, this.message);
 
-        if (PROBE) {
-            this.probe = createProbe(this.input);
-        }
-
         this.render(context);
     }
 
@@ -151,21 +140,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         this.context = context;
 
         const parameter = context.parameters.value;
-
-        if (this.probe && !this.probeSawShape) {
-            this.probeSawShape = true;
-            // P1 and P4: what the binding looks like on this column.
-            this.probe.note('binding', {
-                type: parameter.type,
-                attributes: parameter.attributes,
-                security: parameter.security,
-                raw: parameter.raw,
-                formatted: parameter.formatted,
-                mask: context.parameters.mask.raw,
-                store: context.parameters.store.raw,
-                guide: context.parameters.guide.raw,
-            });
-        }
 
         this.applyTheme(context);
         this.container.classList.toggle('InputMask--hidden', !context.mode.isVisible);
@@ -245,14 +219,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         const known = this.column ?? '';
         const echo = incoming !== known && this.written.includes(incoming);
 
-        this.probe?.note('updateView', {
-            incoming,
-            known,
-            classified: incoming === known ? 'same' : echo ? 'echo' : 'adopt',
-            box: this.input.value,
-            caret: this.input.selectionStart,
-        });
-
         if (!force && (incoming === known || echo)) {
             return;
         }
@@ -315,9 +281,9 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     /**
      * Redo from the key itself. On the form (0.0.3, 2026-09-28) Ctrl+Z worked
-     * and Ctrl+Y did nothing. The likely reason: with every `historyUndo`
-     * cancelled, the browser's own history never moves, so it has nothing to
-     * redo and sends no `historyRedo` — 0.0.4's probe logs the key to confirm.
+     * and Ctrl+Y did nothing — with every `historyUndo` cancelled, the
+     * browser's own history never moves, so it has nothing to redo. Taken from
+     * the key, redo works on the form (0.0.4).
      * Ctrl+Y and Ctrl+Shift+Z (Cmd+Shift+Z on a Mac) are taken here and their
      * default prevented, which also stops a `historyRedo` the browser might send
      * for the same key; the `beforeinput` path stays for redo from anywhere
@@ -382,14 +348,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     private onInput = (event: Event): void => {
         const e = event as InputEvent;
 
-        this.probe?.note('input', {
-            inputType: e.inputType,
-            data: e.data,
-            isComposing: e.isComposing,
-            value: this.input.value,
-            caret: this.input.selectionStart,
-        });
-
         // A composition is left alone until it ends: Chromium fires its last
         // `input` *before* `compositionend`, and rewriting the value under an
         // open composition breaks the IME — the Android keyboard composes
@@ -423,11 +381,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         this.showBox();
         this.drawPlaceholder();
         this.drawState();
-
-        if (this.pendingNotify) {
-            this.pendingNotify = false;
-            this.notifyOutputChanged();
-        }
     };
 
     private edit(inputType: string | undefined): void {
@@ -470,13 +423,9 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
             this.written.shift();
         }
 
-        this.probe?.note('write', { value, mode: this.probe.notifyMode });
-
-        if (this.probe?.notifyMode === 'blur' && this.focused) {
-            this.pendingNotify = true;
-            return;
-        }
-
+        // Every keystroke, not on leaving the field: measured on the form
+        // (SPEC.md P2), holding the write back bought nothing, and the late
+        // echoes it would have avoided are what `written` is for.
         this.lastValid = this.isValid();
         this.notifyOutputChanged();
     }
@@ -592,8 +541,6 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
         this.container.classList.toggle('InputMask--dark', isDarkTheme);
     }
-
-    private probeSawShape = false;
 }
 
 /**

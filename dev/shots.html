@@ -1,0 +1,146 @@
+<!doctype html>
+<!--
+    Every state worth a screenshot, mounted side by side — the recipe behind
+    media/*.png, kept so the next release retakes them instead of guessing.
+
+        npm run harness      (or: node dev/serve.js --no-open --port 8104)
+        chrome --headless --hide-scrollbars --screenshot=media/states.png \
+               --window-size=560,420 --virtual-time-budget=3000 "http://localhost:8104/dev/shots.html"
+        …?theme=dark for the dark set
+
+    Each state is a real control on the rig's host. The typed states are typed
+    with InputEvents, as a browser types, so the control takes its own edit
+    path rather than being handed a value.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Input Mask — states</title>
+        <link rel="stylesheet" href="../InputMask/css/InputMask.css" />
+        <style>
+            body {
+                margin: 0;
+                padding: 20px 24px;
+                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-size: 14px;
+                background: #ffffff;
+                color: #242424;
+            }
+            body.dark {
+                background: #1f1f1f;
+                color: #ffffff;
+            }
+            .row {
+                display: grid;
+                grid-template-columns: 180px 320px;
+                gap: 16px;
+                align-items: start;
+                margin-bottom: 18px;
+            }
+            .label {
+                padding-top: 6px;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="states"></div>
+
+        <script src="fixture.js"></script>
+        <script src="host.js"></script>
+        <script>
+            var host = window.__pcfHost;
+            var registration = host.captureRegistration(window);
+        </script>
+        <script src="../out/controls/InputMask/bundle.js"></script>
+        <script>
+            (function () {
+            function start() {
+                var dark = new URLSearchParams(window.location.search).get('theme') === 'dark';
+                var INPUTS = { mask: null, pattern: null, store: null, guide: null };
+
+                document.body.classList.toggle('dark', dark);
+
+                function mount(label, options, then) {
+                    var row = document.createElement('div');
+                    var name = document.createElement('div');
+                    var container = document.createElement('div');
+
+                    row.className = 'row';
+                    name.className = 'label';
+                    name.textContent = label;
+                    row.append(name, container);
+                    document.getElementById('states').append(row);
+
+                    var o = Object.assign({ dark: dark, label: label, placeholder: '', getString: getString }, options);
+
+                    o.inputs = Object.assign({}, INPUTS, options.inputs || {});
+
+                    var control = new registration.ctor();
+
+                    control.init(host.createContext(o), function () {}, {}, container);
+                    control.updateView(host.createContext(o));
+
+                    if (then) {
+                        then(container.querySelector('input'));
+                    }
+                }
+
+                // As a browser types: the edit at the cursor, then an InputEvent.
+                function type(input, text) {
+                    input.focus();
+
+                    Array.from(text).forEach(function (c) {
+                        var at = input.selectionStart;
+
+                        input.value = input.value.slice(0, at) + c + input.value.slice(input.selectionEnd);
+                        input.setSelectionRange(at + 1, at + 1);
+                        input.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: c }));
+                    });
+                }
+
+                mount('Main Phone', { value: '2125550100' });
+                mount('Typed, then left', { value: null }, function (input) {
+                    type(input, '555');
+                    input.blur();
+                });
+                mount('Saved before the mask', { value: '555-0152' });
+                mount('Postal code', { value: 'k1a0b1', inputs: { mask: 'postal-ca' } });
+                mount('Order code', { value: null, inputs: { mask: 'custom', pattern: 'AA-9999' } }, function (input) {
+                    type(input, 'ab1234');
+                    input.blur();
+                });
+                mount('Read-only', { value: '2125550100', disabled: true });
+
+                // Last: every state above that types focuses its own input,
+                // which would blur this one and take the guide away.
+                mount('Empty, focused', { value: null, placeholder: 'Phone' }, function (input) {
+                    input.focus();
+                });
+            }
+
+            // The English strings, from the .resx the platform would read —
+            // the rig's own getString answers keys, which is right for a suite
+            // and wrong for a picture.
+            var strings = {};
+
+            function getString(key) {
+                return strings[key] !== undefined ? strings[key] : key;
+            }
+
+            fetch('../InputMask/strings/InputMask.1033.resx')
+                .then(function (r) { return r.text(); })
+                .then(function (xml) {
+                    var doc = new DOMParser().parseFromString(xml, 'application/xml');
+
+                    Array.from(doc.querySelectorAll('data')).forEach(function (node) {
+                        var value = node.querySelector('value');
+
+                        strings[node.getAttribute('name')] = value ? value.textContent : '';
+                    });
+                })
+                .then(start, start);
+            })();
+        </script>
+    </body>
+</html>

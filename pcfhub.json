@@ -28,7 +28,7 @@
 
   "media": {
     "logo": "media/logo.png",
-    "screenshots": []
+    "screenshots": ["media/states-light.png", "media/states-dark.png"]
   },
 
   "demo": {
