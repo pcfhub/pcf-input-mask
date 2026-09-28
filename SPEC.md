@@ -81,6 +81,11 @@ and reopen the account, then confirm the page runs 0.1.0: the loaded
 | W6 | Account Number, custom `AA-9999`, Store as raw: type `ab1234`, Save; read back | box `AB-1234`; column `AB1234` |
 | W7 | The phone client (Power Apps mobile), Main Phone: type a number | number pad; value masked; no doubled digits |
 
+**Result, 2026-09-28: W1–W6 passed on the Accounts form** with the page
+confirmed running the 0.1.0 bundle (no probe in it). W7 (the phone client)
+not run. **The control also works in a canvas app** (the user's check, same
+day; whether a Save was gated on `isValid` was not reported).
+
 ```js
 // Read back a column
 fetch(`/api/data/v9.2/accounts(${Xrm.Page.data.entity.getId().replace(/[{}]/g, '')})?$select=telephone1,accountnumber`).then((r) => r.json()).then((j) => console.log(j.telephone1, j.accountnumber))
@@ -99,6 +104,7 @@ inputs, focus. What the demo cannot show is the platform's echo timing.
 - The Power Apps phone client with the Android keyboard, which composes every
   word — the composition path is asserted against Chromium's documented order
   only (W7 asks).
-- A canvas app gating Save on `isValid`.
+- A canvas app gating Save on `isValid` — the control is confirmed working in
+  canvas, the output driving a Save is not.
 - Whether a form OnChange handler on the column runs on every keystroke, now
   that every keystroke notifies (as every text control in the catalogue does).
