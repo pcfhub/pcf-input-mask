@@ -88,7 +88,31 @@ notifies on every keystroke and the switch goes.
 **P3 (typing only) — same log.** Typing arrives as `InputEvent`,
 `cancelable: true`, `inputType: "insertText"`, `data` the character; `input`
 carries the same `inputType`/`data`; the `change` on leaving is a plain `Event`.
-As the rig models. Still open: paste, Backspace, autofill, undo, `blockHash`.
+As the rig models.
+
+**P3 (the rest) and P6 — 2026-09-28, same form.** All as the rig models
+except undo:
+
+- **Paste:** a `ClipboardEvent` `paste`, then `beforeinput`/`input`
+  `insertFromPaste` with `data` the whole pasted text; `+1 (212) 555-0100`
+  written as `(212) 555-0100`.
+- **Autofill** (Chrome's saved phone): a bare `input` — **no `inputType`, no
+  `beforeinput`** — then `change`; `3318942937` written as `(331) 894-2937`.
+  The read-back edit path handled it; a `beforeinput`-only control would not.
+- **`preventDefault` on `beforeinput` is honoured:** `#` blocked, no `input`.
+- **Undo is broken by any control that rewrites the value.** `historyUndo`
+  arrives, `cancelable: true`, and then — the browser's undo stack no longer
+  matching the box — an `input` `historyUndo` with the **value unchanged** and
+  the cursor at 0; the control then put the cursor after `(`. **0.1.0, the
+  user's choice: the control keeps its own history** and answers
+  `historyUndo`/`historyRedo` itself (cancel, step back, write, put the cursor
+  back). The rig gains `dom.user.undo`/`redo` in the measured shape.
+- **P6:** `sameValueCaret()` answered `selectionStart: 2` — an identical
+  assignment leaves the cursor. The rig's model holds.
+- Not in this log: Backspace just after `) ` (the runs deleted from the end).
+  Proven in Chromium in the harness; goes into the walkthrough.
+- The probe stayed in `blur` mode through the Ctrl+F5 — the page was not
+  reloaded, or the form kept the control. It changes nothing above.
 
 Reading a saved value back (P5), in the console:
 

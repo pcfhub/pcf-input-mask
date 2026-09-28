@@ -1,6 +1,7 @@
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import { Mask, guide, resolve } from './pattern';
-import { applyInput, caretAt, extract, isLossy, render } from './format';
+import { applyInput, caretAt, charsBefore, extract, isLossy, render } from './format';
+import { History, Snapshot, empty, record, redo, undo } from './history';
 import { Store, stored, storeOf, verdictOf } from './verdict';
 import { Probe, createProbe } from './probe';
 
@@ -21,7 +22,10 @@ const ECHO_MEMORY = 32;
  * The edit path is the part worth reading. The browser makes each edit, and
  * `onInput` then compares the field with the display the control last drew
  * and redraws it — one path for typing, paste, delete, autofill (which fires
- * no `beforeinput` to cancel), undo, and a composition once it has ended.
+ * no `beforeinput` to cancel) and a composition once it has ended. Undo and
+ * redo are the exception: the browser's own history stops matching the box the
+ * moment a control rewrites it, so those two are cancelled in `beforeinput` and
+ * answered from the control's own history (`history.ts`).
  * Assigning a *different* value moves a browser's cursor to the end, so every
  * redraw puts it back by counting characters, not display positions.
  */
@@ -71,6 +75,11 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
      */
     private written: string[] = [];
 
+    /** The control's own undo history — see `history.ts`. */
+    private history: History = empty();
+    /** The field as it was when the edit now arriving began. */
+    private before: Snapshot | null = null;
+
     /** The last context, for the handlers that redraw between renders. */
     private context!: ComponentFramework.Context<IInputs>;
 
@@ -90,6 +99,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         this.input.className = 'InputMask-input';
         this.input.type = 'text';
         this.input.spellcheck = false;
+        this.input.addEventListener('beforeinput', this.onBeforeInput);
         this.input.addEventListener('input', this.onInput);
         this.input.addEventListener('compositionstart', this.onCompositionStart);
         this.input.addEventListener('compositionend', this.onCompositionEnd);
@@ -127,6 +137,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     }
 
     public destroy(): void {
+        this.input.removeEventListener('beforeinput', this.onBeforeInput);
         this.input.removeEventListener('input', this.onInput);
         this.input.removeEventListener('compositionstart', this.onCompositionStart);
         this.input.removeEventListener('compositionend', this.onCompositionEnd);
@@ -248,6 +259,10 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
             this.written = [];
         }
 
+        // A value from the form starts the history again: undoing past it
+        // would bring back a value the form has since replaced.
+        this.history = empty();
+
         this.column = incoming === '' ? null : incoming;
         this.chars = extract(mask, incoming);
         this.saved =
@@ -270,6 +285,73 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         if (this.input.value !== text) {
             this.input.value = text;
         }
+    }
+
+    /**
+     * Two jobs. Undo and redo are cancelled and answered here — measured
+     * cancelable on the form. Every other edit only has its starting point
+     * noted, for the history; the edit itself is read back in `onInput`.
+     */
+    private onBeforeInput = (event: Event): void => {
+        const e = event as InputEvent;
+
+        if (this.mask === null) {
+            return;
+        }
+
+        if (e.inputType === 'historyUndo' || e.inputType === 'historyRedo') {
+            event.preventDefault();
+            this.step(e.inputType === 'historyUndo' ? 'undo' : 'redo');
+
+            return;
+        }
+
+        if (!this.composing) {
+            this.before = this.snapshot();
+        }
+    };
+
+    private snapshot(): Snapshot {
+        const mask = this.mask as Mask;
+        const caret = this.input.selectionStart ?? this.display.length;
+
+        return { chars: this.chars.slice(), k: charsBefore(mask, this.chars, caret) };
+    }
+
+    private step(direction: 'undo' | 'redo'): void {
+        const moved = (direction === 'undo' ? undo : redo)(this.history, this.snapshot());
+
+        // Nothing to step to: the event is still cancelled, so the browser's
+        // own undo cannot move the cursor to the start (measured in 0.0.2).
+        if (moved === null) {
+            return;
+        }
+
+        this.history = moved.history;
+        this.show(moved.to.chars, moved.to.k);
+    }
+
+    /** Put these characters in the box, the cursor after the `k`th, and write. */
+    private show(chars: string[], k: number): void {
+        const mask = this.mask as Mask;
+
+        this.chars = chars;
+        this.display = render(mask, this.chars);
+        this.saved = null;
+
+        if (this.input.value !== this.display) {
+            this.input.value = this.display;
+        }
+
+        const at = caretAt(mask, this.chars, k);
+
+        if (this.input.selectionStart !== at || this.input.selectionEnd !== at) {
+            this.input.setSelectionRange(at, at);
+        }
+
+        this.write();
+        this.drawPlaceholder();
+        this.drawState();
     }
 
     private onInput = (event: Event): void => {
@@ -296,6 +378,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     private onCompositionStart = (): void => {
         this.composing = true;
+        this.before = this.mask === null ? null : this.snapshot();
     };
 
     private onCompositionEnd = (): void => {
@@ -332,23 +415,16 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         const caret = this.input.selectionStart ?? text.length;
         const result = applyInput(mask, this.chars, this.display, text, caret, inputType);
 
-        this.chars = result.chars;
-        this.display = render(mask, this.chars);
-        this.saved = null;
+        if (result.chars.join('') !== this.chars.join('')) {
+            // Autofill has no `beforeinput`, so no starting point was noted:
+            // the whole previous value, cursor at its end, is the step back.
+            const before = this.before ?? { chars: this.chars.slice(), k: this.chars.length };
 
-        if (this.input.value !== this.display) {
-            this.input.value = this.display;
+            this.history = record(this.history, before, inputType);
         }
 
-        const at = caretAt(mask, this.chars, result.k);
-
-        if (this.input.selectionStart !== at || this.input.selectionEnd !== at) {
-            this.input.setSelectionRange(at, at);
-        }
-
-        this.write();
-        this.drawPlaceholder();
-        this.drawState();
+        this.before = null;
+        this.show(result.chars, result.k);
     }
 
     /**

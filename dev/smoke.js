@@ -320,6 +320,7 @@ const load = createLoader({
 const P = load('pattern');
 const F = load('format');
 const V = load('verdict');
+const H = load('history');
 
 const phone = P.resolve('phone-us', null).mask;
 const digits = (text) => F.extract(phone, text).join('');
@@ -373,6 +374,26 @@ const digits = (text) => F.extract(phone, text).join('');
     check('complete and incomplete by slot count', V.verdictOf(phone, Array.from('5551234567')) === 'complete' && V.verdictOf(phone, ['5']) === 'incomplete');
     check('an empty value is stored as null, not ""', V.stored(phone, [], 'formatted') === null);
     check('formatted stores the display, raw the characters', V.stored(phone, Array.from('555'), 'formatted') === '(555' && V.stored(phone, Array.from('555'), 'raw') === '555');
+    {
+        const snap = (text, k) => ({ chars: Array.from(text), k });
+        let h = H.empty();
+
+        h = H.record(h, snap('', 0), 'insertText');
+        h = H.record(h, snap('5', 1), 'insertText');
+        h = H.record(h, snap('55', 2), 'insertText');
+        check('a run of typing is one undo step', h.past.length === 1 && h.past[0].chars.join('') === '', JSON.stringify(h.past));
+
+        h = H.record(h, snap('555', 3), 'insertFromPaste');
+        h = H.record(h, snap('555212', 6), 'insertFromPaste');
+        check('each paste is a step of its own', h.past.length === 3, String(h.past.length));
+
+        const back = H.undo(h, snap('5552125550', 10));
+        check('undo steps back to the field before the last edit and keeps the present for redo', back.to.chars.join('') === '555212' && back.history.future.length === 1);
+        const forward = H.redo(back.history, back.to);
+        check('redo steps forward again', forward.to.chars.join('') === '5552125550');
+        check('a new edit ends the redo', H.record(back.history, snap('555212', 6), 'insertText').future.length === 0);
+        check('nothing to undo is null, not a throw', H.undo(H.empty(), snap('', 0)) === null && H.redo(H.empty(), snap('', 0)) === null);
+    }
     check('a blank or unknown store is formatted', V.storeOf(null) === 'formatted' && V.storeOf('digits') === 'formatted' && V.storeOf(' raw ') === 'raw');
 }
 
@@ -461,6 +482,41 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     field(cleared).select();
     dom.user.backspace(field(cleared));
     check('clearing the field writes null, not ""', cleared.outputs().value === null && field(cleared).value === '', JSON.stringify(cleared.outputs()));
+
+    /*
+     * Undo. Measured on the form 2026-09-28: once the control rewrites the
+     * box, the browser's own Ctrl+Z changes nothing and leaves the cursor at 0
+     * — so the control cancels historyUndo/historyRedo and answers them.
+     */
+    const undoing = mount({ value: null });
+    const u = field(undoing);
+
+    dom.user.type(u, '5551');
+    dom.user.paste(u, '234');
+    check('typing then a paste', u.value === '(555) 123-4', u.value);
+
+    check('Ctrl+Z is cancelled and answered by the control', dom.user.undo(u) === true);
+    check('undoing the paste restores the field before it, the cursor where it was, and writes it', u.value === '(555) 1' && u.selectionStart === 7 && undoing.outputs().value === '(555) 1', `${u.value} @${u.selectionStart} / ${JSON.stringify(undoing.outputs())}`);
+
+    dom.user.undo(u);
+    check('the typed run before it is one more step, back to empty', u.value === '' && undoing.outputs().value === null, JSON.stringify(u.value));
+
+    dom.user.redo(u);
+    dom.user.redo(u);
+    check('redo brings both back', u.value === '(555) 123-4' && undoing.outputs().value === '(555) 123-4', u.value);
+
+    u.setSelectionRange(3, 3);
+    dom.user.undo(u);
+    dom.user.undo(u);
+    const caretBefore = u.selectionStart;
+    check('with nothing left to undo, Ctrl+Z is still cancelled and the cursor does not jump', dom.user.undo(u) === true && u.value === '' && u.selectionStart === caretBefore);
+
+    const replaced = mount({ value: null });
+
+    dom.user.type(field(replaced), '555');
+    replaced.update({ value: '2125550100' });
+    dom.user.undo(field(replaced));
+    check('a value from the form starts the history again — undo does not bring back what it replaced', field(replaced).value === '(212) 555-0100', field(replaced).value);
 }
 
 {

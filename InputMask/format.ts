@@ -67,6 +67,11 @@ export function caretAt(mask: Mask, chars: string[], k: number): number {
     return k >= chars.length ? text.length : at[k - 1] + 1;
 }
 
+/** The inverse of `caretAt`: how many characters sit before a display offset. */
+export function charsBefore(mask: Mask, chars: string[], caret: number): number {
+    return layout(mask, chars).at.filter((p) => p < caret).length;
+}
+
 /**
  * The characters in `text`, taken in order into the slots after `into`; a
  * character no slot at that point accepts is dropped, and so is anything past
