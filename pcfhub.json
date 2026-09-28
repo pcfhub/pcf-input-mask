@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+
+  "slug": "pcf-input-mask",
+  "name": "Input Mask",
+  "tagline": "Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.",
+  "category": "input",
+  "hosts": ["model-driven"],
+  "tags": [],
+
+  "control": {
+    "namespace": "PCFHub",
+    "constructor": "InputMask",
+    "type": "field",
+    "framework": "standard",
+    "manifestPath": "InputMask/ControlManifest.Input.xml"
+  },
+
+  "links": {
+    "homepage": "https://github.com/pcfhub/pcf-input-mask",
+    "support": "https://github.com/pcfhub/pcf-input-mask/issues",
+    "license": "MIT"
+  },
+
+  "docs": {
+    "path": "docs"
+  },
+
+  "media": {
+    "logo": "media/logo.png",
+    "screenshots": []
+  },
+
+  "demo": {
+    "fidelity": "none",
+    "presets": []
+  }
+}
