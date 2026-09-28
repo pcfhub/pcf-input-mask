@@ -70,6 +70,9 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
      */
     private written: string[] = [];
 
+    /** The value the host handed over last time — see `adopt`. */
+    private lastIncoming: string | undefined = undefined;
+
     /** The control's own undo history — see `history.ts`. */
     private history: History = empty();
     /** The field as it was when the edit now arriving began. */
@@ -209,7 +212,17 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     }
 
     /**
-     * Take a value the column holds, unless it is this control's own echo.
+     * Take a value the column holds, unless it is this control's own echo —
+     * or the host saying again what it said last time.
+     *
+     * The second case is the hub's demo, measured 2026-09-28: it never writes
+     * a control's output back into its value, and re-renders on a width
+     * change, a theme or a locale with the preset's value as it always was.
+     * Leaving the field showed the incomplete line, the frame grew, and the
+     * re-render handed down `2125550100` over `(212) 555-010` — taken as the
+     * form's own change, it wiped the edit and its message. A form never
+     * repeats itself like that: every write comes back as a new value, so a
+     * value equal to the host's last one is not news on either host.
      *
      * A mask change re-reads even an echo: the same stored string is other
      * characters under another pattern.
@@ -218,8 +231,11 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         const mask = this.mask as Mask;
         const known = this.column ?? '';
         const echo = incoming !== known && this.written.includes(incoming);
+        const repeated = incoming === this.lastIncoming;
 
-        if (!force && (incoming === known || echo)) {
+        this.lastIncoming = incoming;
+
+        if (!force && (incoming === known || echo || repeated)) {
             return;
         }
 

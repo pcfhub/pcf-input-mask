@@ -93,6 +93,19 @@ fetch(`/api/data/v9.2/accounts(${Xrm.Page.data.entity.getId().replace(/[{}]/g, '
 Xrm.Page.getAttribute('telephone1').setValue('555-0152'); Xrm.Page.data.save()
 ```
 
+## The hub's demo, after release
+
+**0.1.1 — measured on pcfhub.dev 2026-09-28.** In the published demo,
+Backspace gave `(212) 555-010` and `isValid false`; clicking away then put
+`(212) 555-0100` back, and the outputs said `2125550100` / `true`. The harness
+never writes a control's output back into its value, and re-renders on a width
+change (the incomplete line grows the frame), a theme or a locale with the
+preset's value as it always was — which `adopt` took as the form's change. A
+value equal to the host's last one is ignored now; a form never repeats
+itself like that, since every write comes back as a new value. The standard
+template scaffold had the same gap (`_template` 3154968); the skill says so in
+`rendering-and-hosts.md`.
+
 ## Demo
 
 `full`: nothing leaves the browser — no Web API, no device, no navigation —

@@ -477,6 +477,28 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     echoed.update({ value: '2125550100' });
     check('a value the control never wrote is taken, and masked', field(echoed).value === '(212) 555-0100', field(echoed).value);
 
+    /*
+     * The hub's demo, measured 2026-09-28: it never writes the control's
+     * output back into its value, and re-renders — on a width change, a theme
+     * toggle, a locale — with the preset's value as it always was. Backspace,
+     * leave the field, and the re-render handed `2125550100` down over
+     * `(212) 555-010`; taken as the form's change, it wiped the edit and the
+     * incomplete line with it.
+     */
+    const demo = mount({ value: '2125550100' });
+    const d = field(demo);
+
+    d.focus();
+    d.setSelectionRange(14, 14);
+    dom.user.backspace(d);
+    d.blur();
+    demo.update({ value: '2125550100' });
+    demo.update({ value: '2125550100', dark: true });
+    check('a host repeating its last value is not news — the edit and its message survive the demo’s re-render', d.value === '(212) 555-010' && shown(demo) === 'resx:InputMask_Incomplete' && demo.outputs().isValid === false, `${d.value} / ${shown(demo)}`);
+
+    demo.update({ value: '5551234567' });
+    check('but a value the host has not sent before is still taken', d.value === '(555) 123-4567', d.value);
+
     const cleared = mount({ value: '(555' });
 
     field(cleared).select();
