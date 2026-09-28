@@ -155,8 +155,8 @@
   <data name="InputMask_Incomplete" xml:space="preserve">
     <value>Incompleto: {0} de {1} caracteres.</value>
   </data>
-  <data name="InputMask_Lossy" xml:space="preserve">
-    <value>El valor guardado «{0}» no encaja en esta máscara. Al editarlo se volverá a dar formato.</value>
+  <data name="InputMask_Unfit" xml:space="preserve">
+    <value>Este valor guardado no encaja en la máscara. Haga clic para darle formato; nada cambia a menos que escriba.</value>
   </data>
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>El patrón personalizado de este campo está vacío o no contiene 9, a, A ni *, así que no acepta nada.</value>

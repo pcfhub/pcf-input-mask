@@ -155,8 +155,8 @@
   <data name="InputMask_Incomplete" xml:space="preserve">
     <value>Unvollständig: {0} von {1} Zeichen.</value>
   </data>
-  <data name="InputMask_Lossy" xml:space="preserve">
-    <value>Der gespeicherte Wert „{0}“ passt nicht zu dieser Maske. Beim Bearbeiten wird er neu formatiert.</value>
+  <data name="InputMask_Unfit" xml:space="preserve">
+    <value>Dieser gespeicherte Wert passt nicht zur Maske. Klicken Sie hinein, um ihn zu formatieren; ohne Eingabe ändert sich nichts.</value>
   </data>
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>Das benutzerdefinierte Muster dieses Felds ist leer oder enthält weder 9, a, A noch *, daher nimmt es nichts an.</value>

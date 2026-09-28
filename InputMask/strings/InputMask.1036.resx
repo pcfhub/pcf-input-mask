@@ -155,8 +155,8 @@
   <data name="InputMask_Incomplete" xml:space="preserve">
     <value>Incomplet : {0} caractères sur {1}.</value>
   </data>
-  <data name="InputMask_Lossy" xml:space="preserve">
-    <value>La valeur enregistrée « {0} » ne correspond pas à ce masque. La modifier la remettra en forme.</value>
+  <data name="InputMask_Unfit" xml:space="preserve">
+    <value>Cette valeur enregistrée ne correspond pas au masque. Cliquez pour la mettre en forme ; rien ne change tant que vous ne saisissez rien.</value>
   </data>
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>Le modèle personnalisé de ce champ est vide ou ne contient ni 9, ni a, ni A, ni *, il n’accepte donc rien.</value>

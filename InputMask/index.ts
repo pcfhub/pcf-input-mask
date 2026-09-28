@@ -45,8 +45,19 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     private display = '';
     /** What the column holds, as far as this control knows. */
     private column: string | null = null;
-    /** A stored value the mask could not read whole, until the user edits it. */
-    private lossy: string | null = null;
+    /**
+     * A stored value the mask cannot show as it is — too short to fill it
+     * (`555-0152` under `(999) 999-9999`) or holding something no slot takes
+     * (`ABC28UU7` under `AA-9999`) — until the user edits it.
+     *
+     * Shown **exactly as saved** while the field is at rest, with a neutral
+     * note: redrawn into the mask it read as `(555) 015-2` and `AB-287`,
+     * values nobody saved, in red, on a record nobody had touched (measured
+     * on the form, 2026-09-28). Clicking in switches to the mask; leaving
+     * without typing puts the saved text back; nothing is written until the
+     * user types.
+     */
+    private saved: string | null = null;
     private composing = false;
     private focused = false;
     private lastValid: boolean | undefined = undefined;
@@ -185,7 +196,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
             this.input.value = incoming;
             this.input.disabled = true;
             this.container.classList.add('InputMask--disabled');
-            this.showMessage(context, this.resources.getString('InputMask_BadPattern'), true);
+            this.showMessage(context, this.resources.getString('InputMask_BadPattern'), 'error');
 
             return;
         }
@@ -239,13 +250,25 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
         this.column = incoming === '' ? null : incoming;
         this.chars = extract(mask, incoming);
-        this.lossy = incoming !== '' && isLossy(mask, incoming, this.chars) ? incoming : null;
+        this.saved =
+            incoming !== ''
+            && (isLossy(mask, incoming, this.chars) || verdictOf(mask, this.chars) === 'incomplete')
+                ? incoming
+                : null;
         this.display = render(mask, this.chars);
+        this.showBox();
+    }
 
-        // Only a *different* value is assigned — the same one would be a no-op
-        // in a browser, but there is no reason to rely on it.
-        if (this.input.value !== this.display) {
-            this.input.value = this.display;
+    /**
+     * What the box holds: the saved text while a misfit value is at rest,
+     * the mask otherwise. Only a *different* value is assigned — the same one
+     * would be a no-op in a browser, but there is no reason to rely on it.
+     */
+    private showBox(): void {
+        const text = this.saved !== null && !this.focused ? this.saved : this.display;
+
+        if (this.input.value !== text) {
+            this.input.value = text;
         }
     }
 
@@ -282,12 +305,14 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     private onFocus = (): void => {
         this.focused = true;
+        this.showBox();
         this.drawPlaceholder();
         this.drawState();
     };
 
     private onBlur = (): void => {
         this.focused = false;
+        this.showBox();
         this.drawPlaceholder();
         this.drawState();
 
@@ -309,7 +334,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
         this.chars = result.chars;
         this.display = render(mask, this.chars);
-        this.lossy = null;
+        this.saved = null;
 
         if (this.input.value !== this.display) {
             this.input.value = this.display;
@@ -360,7 +385,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
             return true;
         }
 
-        return this.lossy === null && verdictOf(this.mask, this.chars) !== 'incomplete';
+        return this.saved === null && verdictOf(this.mask, this.chars) !== 'incomplete';
     }
 
     private drawPlaceholder(): void {
@@ -372,8 +397,9 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     /**
      * The message under the field, in order of who knows best: the platform's
-     * own validation, then a stored value the mask cannot read whole, then an
-     * incomplete value — the last only once the user has left the field, since
+     * own validation; then a saved value the mask cannot show, as a neutral
+     * note rather than an error — nobody on this form typed it; then an
+     * incomplete value the user typed, once they have left the field, since
      * every value is incomplete while it is being typed.
      */
     private drawState(): void {
@@ -381,9 +407,9 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         const mask = this.mask as Mask;
 
         if (parameter.error) {
-            this.showMessage(this.context, parameter.errorMessage, true);
-        } else if (this.lossy !== null) {
-            this.showMessage(this.context, this.resources.getString('InputMask_Lossy').replace('{0}', this.lossy), true);
+            this.showMessage(this.context, parameter.errorMessage, 'error');
+        } else if (this.saved !== null) {
+            this.showMessage(this.context, this.resources.getString('InputMask_Unfit'), 'note');
         } else if (!this.focused && verdictOf(mask, this.chars) === 'incomplete') {
             this.showMessage(
                 this.context,
@@ -391,14 +417,14 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
                     .getString('InputMask_Incomplete')
                     .replace('{0}', String(this.chars.length))
                     .replace('{1}', String(mask.slots)),
-                true,
+                'error',
             );
         } else {
-            this.showMessage(this.context, '', false);
+            this.showMessage(this.context, '', 'none');
         }
 
-        // A verdict that changed without a write — a stored value read as
-        // lossy, a mask switched under it — is still news to a canvas app.
+        // A verdict that changed without a write — a saved value the mask
+        // cannot show, a mask switched under it — is still news to a canvas app.
         const valid = this.isValid();
 
         if (this.lastValid !== undefined && valid !== this.lastValid) {
@@ -413,11 +439,20 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         }
     }
 
-    private showMessage(_context: ComponentFramework.Context<IInputs>, text: string, invalid: boolean): void {
-        this.container.classList.toggle('InputMask--invalid', invalid);
-        this.input.setAttribute('aria-invalid', String(invalid));
-        this.message.hidden = !invalid;
-        this.message.textContent = invalid ? text : '';
+    /**
+     * `error` is red and `aria-invalid`; `note` is a neutral line under the
+     * field that marks nothing invalid on screen — `isValid` still says false.
+     */
+    private showMessage(
+        _context: ComponentFramework.Context<IInputs>,
+        text: string,
+        tone: 'error' | 'note' | 'none',
+    ): void {
+        this.container.classList.toggle('InputMask--invalid', tone === 'error');
+        this.message.classList.toggle('InputMask-message--note', tone === 'note');
+        this.input.setAttribute('aria-invalid', String(tone === 'error'));
+        this.message.hidden = tone === 'none';
+        this.message.textContent = tone === 'none' ? '' : text;
     }
 
     /** See the scaffold: only the fallbacks, and only where the host says. */

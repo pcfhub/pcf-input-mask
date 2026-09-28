@@ -275,6 +275,13 @@
     display: none;
 }
 
+/* A saved value the mask cannot show: information, not an error. Nobody on
+   this form typed it, so it is not drawn in red; secondary text, the colour
+   Fluent uses for a field's hint. */
+.InputMask .InputMask-message.InputMask-message--note {
+    color: var(--InputMask-foreground-secondary);
+}
+
 /*
  * Forced colours collapse every tint to one of a handful of system keywords, so
  * anything carrying meaning by colour has to carry it by shape too. The

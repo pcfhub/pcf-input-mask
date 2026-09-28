@@ -478,10 +478,36 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     field(empty).blur();
     check('an empty value is valid — whether it may be empty is the column’s requirement', empty.outputs().isValid === true && shown(empty) === '');
 
-    const lossy = mount({ value: '555.123.4567 x12' });
+    /*
+     * A saved value the mask cannot show — measured on the form 2026-09-28:
+     * 0.0.1 redrew `555-0152` as `(555) 015-2` and `ABC28UU7` under AA-9999 as
+     * `AB-287`, values nobody saved, in red, on a record nobody had touched.
+     * At rest it is shown as saved, with a neutral note; clicking in switches
+     * to the mask; leaving without typing puts it back; nothing is written.
+     */
+    const short = mount({ value: '555-0152' });
+    const box = field(short);
 
-    check('a stored value the mask cannot read whole says so', shown(lossy) === 'resx:InputMask_Lossy', shown(lossy));
-    check('reports isValid false once, and leaves the stored value alone', lossy.notifications() === 1 && lossy.outputs().isValid === false && lossy.outputs().value === '555.123.4567 x12', JSON.stringify(lossy.outputs()));
+    check('a saved value too short for the mask is shown exactly as saved', box.value === '555-0152', box.value);
+    check('with a neutral note, not an error', shown(short) === 'resx:InputMask_Unfit'
+        && message(short).classList.contains('InputMask-message--note')
+        && !short.container.classList.contains('InputMask--invalid')
+        && box.getAttribute('aria-invalid') === 'false', short.container.className);
+    check('and isValid false, reported once on load, the column left alone', short.notifications() === 1 && short.outputs().isValid === false && short.outputs().value === '555-0152', JSON.stringify(short.outputs()));
+
+    box.focus();
+    check('clicking in switches the box to the mask', box.value === '(555) 015-2', box.value);
+    box.blur();
+    check('leaving without typing puts the saved text back and writes nothing', box.value === '555-0152' && short.notifications() === 1 && shown(short) === 'resx:InputMask_Unfit', `${box.value} / ${short.notifications()}`);
+
+    dom.user.type(box, '999');
+    check('typing takes it into the mask, writes it, and drops the note', box.value === '(555) 015-2999' && short.outputs().value === '(555) 015-2999' && short.outputs().isValid === true, `${box.value} / ${JSON.stringify(short.outputs())}`);
+    box.blur();
+    check('and it stays in the mask after the user leaves', box.value === '(555) 015-2999' && shown(short) === '', box.value);
+
+    const unfit = mount({ value: 'ABC28UU7', inputs: { mask: 'custom', pattern: 'AA-9999', store: 'raw' } });
+
+    check('a saved value with characters no slot takes is shown as saved too', field(unfit).value === 'ABC28UU7' && shown(unfit) === 'resx:InputMask_Unfit', field(unfit).value);
 
     const both = mount({ value: '555.123.4567 x12', error: true });
 

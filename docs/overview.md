@@ -25,8 +25,8 @@ today, for model-driven forms and canvas apps.
   autofilled `+1 (212) 555-0100` fills a US mask with the country code dropped.
 - **Says when a value is not finished.** A partial value is saved — nothing
   typed is lost — and the field says *Incomplete* once you leave it. A value
-  already in the column that the mask cannot read whole is shown with a note,
-  and left alone until someone edits it.
+  already in the column that the mask cannot show is displayed exactly as
+  saved, with a note, and left alone until someone types in the field.
 - **Stores what you choose.** The formatted value, which is what views, search
   and exports already show, or the typed characters alone.
 

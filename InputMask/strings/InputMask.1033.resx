@@ -165,8 +165,8 @@
   <data name="InputMask_Incomplete" xml:space="preserve">
     <value>Incomplete: {0} of {1} characters.</value>
   </data>
-  <data name="InputMask_Lossy" xml:space="preserve">
-    <value>The saved value “{0}” does not fit this mask. Editing it will reformat it.</value>
+  <data name="InputMask_Unfit" xml:space="preserve">
+    <value>This saved value does not fit the mask. Click in to reformat it; nothing changes unless you type.</value>
   </data>
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>This field’s custom pattern is empty or has no 9, a, A or *, so it accepts nothing.</value>

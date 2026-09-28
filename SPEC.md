@@ -40,6 +40,40 @@ depends on it.**
 | P5 | Type `555`, click away, **Save**. Is `(555` saved (read it back below), and is the control's own "Incomplete" message shown? With the column made **Business required**, does the partial value still save? | Save; read back | The wording in `limitations.md` |
 | P6 | `__pcfInputMaskProbe.sameValueCaret()` — does an identical `value` assignment leave the cursor at 2 on the form's browser? | Console | The rig's cursor model (`dev/dom.js`) |
 
+### Measured
+
+**P1 — 2026-09-28, Accounts form, cll365. Right way: the Text + Phone type
+group imports and binds to both.** On `telephone1` (Format `Phone`) the
+control renders and **the platform's own phone affordance is gone** — no call
+icon around it; the control replaces the whole field. Two things the binding
+said:
+
+- **`parameter.type` is not the column's format on a type-group binding.**
+  `telephone1` answered `SingleLine.Phone` — and so did `accountnumber`, a
+  **Text** column (`attributes.Format: "Text"`). Read `attributes.Format` /
+  `FormatName` when the format matters; `type` names a group member, not
+  necessarily the bound one. The control reads neither.
+- `attributes` carries `Format`, `FormatName`, `MaxLength` (50 on
+  `telephone1`, 20 on `accountnumber` — **P4's first half, answered**),
+  `RequiredLevel`, `ImeMode` (1 on the phone column, 0 on text) and
+  `Description`. `security` is the object shape, `formatted` equals `raw`.
+
+**Found by looking, not asked:** a stored value that does not fill the mask
+is re-drawn *into* it, and the re-drawing misrepresents it. `555-0152` (a
+seven-digit local number) showed as `(555) 015-2` with *Incomplete: 7 of
+10*; `ABC28UU7` under `AA-9999` showed as `AB-287` with the does-not-fit
+note. Both in red on load, for a value nobody on the form typed. Stored
+values were not changed (nothing was written).
+
+**Changed in 0.0.2, the user's choice:** a saved value that is incomplete or
+lossy under the mask is shown **exactly as saved** at rest, with a neutral
+note (`InputMask_Unfit`, secondary text, no `aria-invalid`); focus switches
+the box to the mask, blur without typing restores the saved text, and
+nothing is written until the user types. `isValid` stays false for it. The
+platform's call icon being gone goes into `limitations.md` for 0.1.0; a call
+button of the control's own is a 0.2.0 candidate (it would need a probe
+question: does `openUrl` take `tel:` on a form and on the phone client).
+
 Reading a saved value back (P5), in the console:
 
 ```js

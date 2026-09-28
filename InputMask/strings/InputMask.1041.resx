@@ -155,8 +155,8 @@
   <data name="InputMask_Incomplete" xml:space="preserve">
     <value>未完了: {1} 文字中 {0} 文字。</value>
   </data>
-  <data name="InputMask_Lossy" xml:space="preserve">
-    <value>保存されている値「{0}」はこのマスクに合いません。編集すると書式が変更されます。</value>
+  <data name="InputMask_Unfit" xml:space="preserve">
+    <value>この保存済みの値はマスクに合いません。クリックすると書式が適用されます。入力しない限り変更されません。</value>
   </data>
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>このフィールドのカスタム パターンが空か、9、a、A、* を含まないため、何も入力できません。</value>

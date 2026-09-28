@@ -17,8 +17,10 @@
     var registration = host.captureRegistration(window);
 
     /** The platform's copy of the column, which is not the control's copy. */
-    // A value the default mask reads, rather than the rig's "Contoso Ltd".
-    var columnValue = '5551234567';
+    // A value the default mask reads, rather than the rig's "Contoso Ltd" —
+    // or ?value=… to open on another saved value (a screenshot recipe needs it).
+    var fromQuery = new URLSearchParams(window.location.search).get('value');
+    var columnValue = fromQuery !== null ? fromQuery : '5551234567';
 
     var instance = null;
     var container = null;

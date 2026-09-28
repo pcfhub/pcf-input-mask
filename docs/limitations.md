@@ -42,10 +42,19 @@ for integrations, formatted for people.
 
 ## A value that does not fit is shown, not fixed
 
-A stored value with something the mask cannot hold — `555.123.4567 x12` in a
-US phone mask — is shown as far as the mask reads it, with a note naming the
-stored value. The column is not rewritten until someone edits the field, and
-then it is rewritten in the mask, dropping what did not fit.
+A saved value the mask cannot show — too short for it (`555-0152` in a US
+phone mask) or holding something no slot takes (`555.123.4567 x12`) — is shown
+exactly as saved, with a note, and **Is valid** is false for it. The column is
+not rewritten until someone types in the field; then it is rewritten in the
+mask, dropping what did not fit. To convert existing rows in bulk, update them
+with a flow or an import.
+
+## No call button on a phone column
+
+On a **Phone** column the platform draws its own call icon beside the value.
+The control replaces the whole field, so that icon is gone while the mask is on
+it (measured on a model-driven form). A call button of the control's own is a
+candidate for a later version.
 
 ## Typing into a full value
 

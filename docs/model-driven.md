@@ -30,10 +30,11 @@ form's save. A form's save cannot be blocked from a control anyway — see
 - A value that is not complete is saved as typed; once the user leaves the
   field it says **Incomplete**, with how many characters are there of how many
   the mask wants.
-- A value already in the column that the mask cannot read whole — an
-  extension typed after a phone number, say — is shown as far as the mask can
-  read it, with a note giving the stored value. Nothing is rewritten until the
-  user edits the field.
+- A value already in the column that the mask cannot show — a seven-digit
+  `555-0152` under the US phone mask, an extension typed after a number — is
+  shown **exactly as saved**, with a grey note rather than an error. Clicking
+  in shows it in the mask; leaving without typing puts the saved text back.
+  Nothing is written until the user types.
 - A business rule's or the platform's own validation message wins over the
   control's.
 

@@ -72,8 +72,8 @@
       {
         "slug": "lossy",
         "name": "A value that does not fit",
-        "description": "An extension typed into a phone column by hand. The mask shows what it can read and says the rest does not fit; nothing is rewritten until someone edits it.",
-        "props": { "value": "555.123.4567 x12", "mask": "phone-us", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "" }
+        "description": "A seven-digit local number saved before the mask. It is shown exactly as saved with a note; click in to see it in the mask, click away and it is back; nothing is written until you type.",
+        "props": { "value": "555-0152", "mask": "phone-us", "pattern": "", "store": "formatted", "guide": "on", "placeholder": "" }
       }
     ]
   }

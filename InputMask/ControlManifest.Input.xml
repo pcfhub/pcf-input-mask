@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="InputMask"
-           version="0.0.1"
+           version="0.0.2"
            display-name-key="InputMask_Name"
            description-key="InputMask_Desc"
            control-type="standard">
