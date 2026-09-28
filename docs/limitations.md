@@ -62,6 +62,20 @@ Once every slot is filled, a further character at the end is refused. One
 typed in the middle is inserted and pushes the last character out, as
 overtyping would — select what you want to replace first.
 
+## The column has to be long enough
+
+A formatted `(999) 999-9999` is 14 characters; a column shorter than a
+complete value cannot save one — the platform refuses it at save. The field
+tells the maker when the mask needs more characters than the column holds.
+**Store as** raw needs only the typed characters, or lengthen the column.
+
+## Undo and redo keys
+
+Ctrl+Z undoes and Ctrl+Y or Ctrl+Shift+Z redoes, from the control's own
+history: a run of typing is one step, a paste or autofill another. A value
+that arrives from the form — a script, a business rule — starts the history
+again.
+
 ## Email and URL columns
 
 The control binds Text and Phone columns only. An email or URL has no fixed

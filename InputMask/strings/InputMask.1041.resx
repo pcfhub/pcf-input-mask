@@ -161,4 +161,7 @@
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>このフィールドのカスタム パターンが空か、9、a、A、* を含まないため、何も入力できません。</value>
   </data>
+  <data name="InputMask_TooLong" xml:space="preserve">
+    <value>このマスクには {0} 文字が必要ですが、列には {1} 文字までしか入りません。完全な値は保存できません。保存形式を未加工にするか、短いパターンか長い列を選んでください。</value>
+  </data>
 </root>

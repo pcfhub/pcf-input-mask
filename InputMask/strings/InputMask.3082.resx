@@ -161,4 +161,7 @@
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>El patrón personalizado de este campo está vacío o no contiene 9, a, A ni *, así que no acepta nada.</value>
   </data>
+  <data name="InputMask_TooLong" xml:space="preserve">
+    <value>Esta máscara necesita {0} caracteres pero la columna admite {1}, así que un valor completo no se puede guardar. Elija Guardar como sin formato, un patrón más corto o una columna más larga.</value>
+  </data>
 </root>

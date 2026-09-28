@@ -36,7 +36,11 @@ form's save. A form's save cannot be blocked from a control anyway — see
   in shows it in the mask; leaving without typing puts the saved text back.
   Nothing is written until the user types.
 - A business rule's or the platform's own validation message wins over the
-  control's.
+  control's. The form draws that message itself under the field; the control
+  only marks the field red, so it is not shown twice.
+- If the mask needs more characters than the column holds, the field says so —
+  a complete value could never be saved. Choose **Store as** raw, a shorter
+  pattern, or a longer column.
 
 ## Choosing *Store as*
 

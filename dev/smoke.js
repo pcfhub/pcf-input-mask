@@ -505,6 +505,29 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     dom.user.redo(u);
     check('redo brings both back', u.value === '(555) 123-4' && undoing.outputs().value === '(555) 123-4', u.value);
 
+    /*
+     * Ctrl+Y from the key. On the form (0.0.3) Ctrl+Z worked and Ctrl+Y did
+     * nothing — with every historyUndo cancelled the browser has nothing of its
+     * own to redo. The key is taken instead.
+     */
+    const key = (k, extra) => {
+        const event = { type: 'keydown', target: u, key: k, ctrlKey: true, metaKey: false, shiftKey: false, altKey: false, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...extra };
+        u.dispatchEvent(event);
+        return event;
+    };
+
+    dom.user.undo(u);
+    const ctrlY = key('y');
+    check('Ctrl+Y redoes, and its default is prevented', ctrlY.defaultPrevented && u.value === '(555) 123-4', u.value);
+
+    dom.user.undo(u);
+    key('Z', { shiftKey: true });
+    check('so does Ctrl+Shift+Z', u.value === '(555) 123-4', u.value);
+
+    dom.user.undo(u);
+    check('Ctrl+Z is left to beforeinput — the key is not taken', key('z').defaultPrevented === false && u.value === '(555) 1', u.value);
+    dom.user.redo(u);
+
     u.setSelectionRange(3, 3);
     dom.user.undo(u);
     dom.user.undo(u);
@@ -567,7 +590,30 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
 
     const both = mount({ value: '555.123.4567 x12', error: true });
 
-    check('the platform’s own validation outranks the control’s', shown(both) === host.DEFAULTS.errorMessage, shown(both));
+    /*
+     * Measured 2026-09-28: a model-driven form draws the platform's own
+     * message under the field itself, so the control printing it too showed
+     * every error twice. There the field is only marked; canvas draws nothing,
+     * so there the text is shown.
+     */
+    check('on a model-driven form the platform’s error outranks the control’s, and is not printed twice', shown(both) === ''
+        && both.container.classList.contains('InputMask--invalid') && field(both).getAttribute('aria-invalid') === 'true', shown(both));
+
+    const bothCanvas = mount({ value: '555.123.4567 x12', error: true, host: 'canvas' });
+
+    check('in canvas, which draws nothing, the platform’s message is shown', shown(bothCanvas) === host.DEFAULTS.errorMessage, shown(bothCanvas));
+
+    /*
+     * Measured 2026-09-28: a 22-character formatted value in a 20-character
+     * column is refused at save. A mask that long can never be saved
+     * complete, so the maker is told on sight.
+     */
+    const long = { mask: 'custom', pattern: 'AAAA-9999-9999-9999-99' };
+    const tooLong = mount({ value: null, maxLength: 20, inputs: long });
+
+    check('a formatted mask longer than the column says so', shown(tooLong) === 'resx:InputMask_TooLong' && tooLong.container.classList.contains('InputMask--invalid'), shown(tooLong));
+    check('stored raw, the same mask fits and says nothing', shown(mount({ value: null, maxLength: 20, inputs: { ...long, store: 'raw' } })) === '');
+    check('in canvas there is no column length to compare with', shown(mount({ value: null, host: 'canvas', inputs: long })) === '');
 
     const guided = mount({ value: null, placeholder: 'Phone' });
 

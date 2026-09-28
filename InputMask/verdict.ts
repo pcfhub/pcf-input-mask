@@ -26,6 +26,18 @@ export function storeOf(value: string | null | undefined): Store {
 }
 
 /**
+ * How many characters a complete value takes in the column: every token when
+ * formatted (each slot and each literal is one character), the slots alone when
+ * raw. Measured on the form 2026-09-28: a 22-character formatted value in a
+ * 20-character column is refused at save, on the field and in the form's
+ * notification bar — so a mask longer than its column can never be saved
+ * complete, and the maker is told on sight.
+ */
+export function neededLength(mask: Mask, store: Store): number {
+    return store === 'raw' ? mask.slots : mask.tokens.length;
+}
+
+/**
  * The string written to the column. An empty value is `null`, not `''`: a
  * cleared column must be cleared, and `''` is a value on some hosts.
  */

@@ -171,4 +171,7 @@
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>This field’s custom pattern is empty or has no 9, a, A or *, so it accepts nothing.</value>
   </data>
+  <data name="InputMask_TooLong" xml:space="preserve">
+    <value>This mask needs {0} characters but the column holds {1}, so a complete value cannot be saved. Choose Store as raw, a shorter pattern or a longer column.</value>
+  </data>
 </root>

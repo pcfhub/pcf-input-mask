@@ -161,4 +161,7 @@
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>Das benutzerdefinierte Muster dieses Felds ist leer oder enthält weder 9, a, A noch *, daher nimmt es nichts an.</value>
   </data>
+  <data name="InputMask_TooLong" xml:space="preserve">
+    <value>Diese Maske braucht {0} Zeichen, die Spalte fasst aber {1}; ein vollständiger Wert kann daher nicht gespeichert werden. Wählen Sie „Roh“ speichern, ein kürzeres Muster oder eine längere Spalte.</value>
+  </data>
 </root>

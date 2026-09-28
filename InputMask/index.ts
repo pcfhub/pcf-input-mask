@@ -2,7 +2,7 @@ import { IInputs, IOutputs } from './generated/ManifestTypes';
 import { Mask, guide, resolve } from './pattern';
 import { applyInput, caretAt, charsBefore, extract, isLossy, render } from './format';
 import { History, Snapshot, empty, record, redo, undo } from './history';
-import { Store, stored, storeOf, verdictOf } from './verdict';
+import { Store, neededLength, stored, storeOf, verdictOf } from './verdict';
 import { Probe, createProbe } from './probe';
 
 /** The 0.0.1 probe build. False, and `probe.ts` deleted, before 0.1.0. */
@@ -99,6 +99,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         this.input.className = 'InputMask-input';
         this.input.type = 'text';
         this.input.spellcheck = false;
+        this.input.addEventListener('keydown', this.onKeyDown);
         this.input.addEventListener('beforeinput', this.onBeforeInput);
         this.input.addEventListener('input', this.onInput);
         this.input.addEventListener('compositionstart', this.onCompositionStart);
@@ -137,6 +138,7 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     }
 
     public destroy(): void {
+        this.input.removeEventListener('keydown', this.onKeyDown);
         this.input.removeEventListener('beforeinput', this.onBeforeInput);
         this.input.removeEventListener('input', this.onInput);
         this.input.removeEventListener('compositionstart', this.onCompositionStart);
@@ -311,6 +313,29 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         }
     };
 
+    /**
+     * Redo from the key itself. On the form (0.0.3, 2026-09-28) Ctrl+Z worked
+     * and Ctrl+Y did nothing. The likely reason: with every `historyUndo`
+     * cancelled, the browser's own history never moves, so it has nothing to
+     * redo and sends no `historyRedo` — 0.0.4's probe logs the key to confirm.
+     * Ctrl+Y and Ctrl+Shift+Z (Cmd+Shift+Z on a Mac) are taken here and their
+     * default prevented, which also stops a `historyRedo` the browser might send
+     * for the same key; the `beforeinput` path stays for redo from anywhere
+     * else, such as a menu.
+     */
+    private onKeyDown = (event: KeyboardEvent): void => {
+        if (this.mask === null || !(event.ctrlKey || event.metaKey) || event.altKey) {
+            return;
+        }
+
+        const key = event.key.toLowerCase();
+
+        if ((key === 'y' && !event.shiftKey) || (key === 'z' && event.shiftKey)) {
+            event.preventDefault();
+            this.step('redo');
+        }
+    };
+
     private snapshot(): Snapshot {
         const mask = this.mask as Mask;
         const caret = this.input.selectionStart ?? this.display.length;
@@ -473,17 +498,38 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
 
     /**
      * The message under the field, in order of who knows best: the platform's
-     * own validation; then a saved value the mask cannot show, as a neutral
-     * note rather than an error — nobody on this form typed it; then an
-     * incomplete value the user typed, once they have left the field, since
-     * every value is incomplete while it is being typed.
+     * own validation; then a mask the column is too short for; then a saved
+     * value the mask cannot show, as a neutral note rather than an error —
+     * nobody on this form typed it; then an incomplete value the user typed,
+     * once they have left the field, since every value is incomplete while it
+     * is being typed.
+     *
+     * **The platform's own message is not repeated on a model-driven form.**
+     * Measured 2026-09-28: the form draws it under the field itself ("⊗ Main
+     * Phone: Required fields must be filled in."), so printing
+     * `errorMessage` showed every error twice. There the field is only marked
+     * invalid; in canvas, which draws nothing, the text is shown. Column
+     * metadata is the tell — a model-driven form publishes `attributes`,
+     * canvas does not.
      */
     private drawState(): void {
         const parameter = this.context.parameters.value;
         const mask = this.mask as Mask;
+        const modelDriven = parameter.attributes !== undefined;
+        const maxLength = parameter.attributes?.MaxLength;
+        const needed = neededLength(mask, this.store);
 
         if (parameter.error) {
-            this.showMessage(this.context, parameter.errorMessage, 'error');
+            this.showMessage(this.context, parameter.errorMessage, modelDriven ? 'mark' : 'error');
+        } else if (maxLength !== undefined && maxLength > 0 && needed > maxLength) {
+            this.showMessage(
+                this.context,
+                this.resources
+                    .getString('InputMask_TooLong')
+                    .replace('{0}', String(needed))
+                    .replace('{1}', String(maxLength)),
+                'error',
+            );
         } else if (this.saved !== null) {
             this.showMessage(this.context, this.resources.getString('InputMask_Unfit'), 'note');
         } else if (!this.focused && verdictOf(mask, this.chars) === 'incomplete') {
@@ -516,19 +562,24 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
     }
 
     /**
-     * `error` is red and `aria-invalid`; `note` is a neutral line under the
-     * field that marks nothing invalid on screen — `isValid` still says false.
+     * `error` is red, `aria-invalid` and a line of text; `mark` is red and
+     * `aria-invalid` with no text, for a message the host draws itself;
+     * `note` is a neutral line that marks nothing invalid on screen —
+     * `isValid` still says false.
      */
     private showMessage(
         _context: ComponentFramework.Context<IInputs>,
         text: string,
-        tone: 'error' | 'note' | 'none',
+        tone: 'error' | 'mark' | 'note' | 'none',
     ): void {
-        this.container.classList.toggle('InputMask--invalid', tone === 'error');
+        const invalid = tone === 'error' || tone === 'mark';
+        const shown = tone === 'error' || tone === 'note';
+
+        this.container.classList.toggle('InputMask--invalid', invalid);
         this.message.classList.toggle('InputMask-message--note', tone === 'note');
-        this.input.setAttribute('aria-invalid', String(tone === 'error'));
-        this.message.hidden = tone === 'none';
-        this.message.textContent = tone === 'none' ? '' : text;
+        this.input.setAttribute('aria-invalid', String(invalid));
+        this.message.hidden = !shown;
+        this.message.textContent = shown ? text : '';
     }
 
     /** See the scaffold: only the fallbacks, and only where the host says. */

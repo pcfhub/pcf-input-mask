@@ -114,6 +114,39 @@ except undo:
 - The probe stayed in `blur` mode through the Ctrl+F5 — the page was not
   reloaded, or the form kept the control. It changes nothing above.
 
+**0.0.3 on the form — 2026-09-28.**
+
+- **A stale bundle, first.** With `customcontrols` answering `0.0.3`, Ctrl+Z
+  still behaved as 0.0.2 (an `input` `historyUndo` after each `beforeinput`,
+  no `write`) — the browser was running the old `bundle.js`. After a reload
+  that took, **Ctrl+Z works.** The version on the record is not evidence of the
+  code in the page; `performance.getEntriesByType('resource')` plus a
+  `fetch` of the bundle and a search for a string only the new build has is.
+- **Ctrl+Y does nothing.** Likely: every `historyUndo` is cancelled, so the
+  browser's own history never moves and it has nothing to redo. 0.0.4 takes
+  Ctrl+Y / Ctrl+Shift+Z from `keydown` and its probe logs the key to confirm.
+- **The platform's retired control is still installed:**
+  `MscrmControls.InputMask.InputMaskControl` 1.0.5 is in `customcontrols`.
+
+**P5 — right way.** `555` typed, left, saved: read back `(555`. With the column
+**Business required**, an empty value is refused by the platform and a partial
+one **is saved** — required means non-empty, nothing more. The docs say so.
+
+**P4, second half — the platform refuses a value longer than the column at
+save.** `AAAA-9999-9999-9999-99` (22 formatted) in `accountnumber` (20): "You
+have exceeded the maximum number of 20 characters in this field", on the field
+and in the form's notification bar; nothing saved. **0.0.4:** when the column
+publishes `MaxLength` and a complete value needs more (`neededLength`: every
+token formatted, the slots raw), the field says so to the maker on sight.
+
+**Found by looking: every error was shown twice.** The modern form draws the
+platform's own message under the field ("⊗ Main Phone: Required fields must be
+filled in.") and the control printed `errorMessage` above it. **0.0.4:** on a
+model-driven form (the tell: `attributes` present) the field is only marked —
+red, `aria-invalid` — and the text is left to the platform; canvas, which draws
+nothing, still shows it. The template's scaffolds print it too, so every field
+control in the catalogue probably doubles it — not yet looked at on another.
+
 Reading a saved value back (P5), in the console:
 
 ```js

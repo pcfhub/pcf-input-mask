@@ -161,4 +161,7 @@
   <data name="InputMask_BadPattern" xml:space="preserve">
     <value>Le modèle personnalisé de ce champ est vide ou ne contient ni 9, ni a, ni A, ni *, il n’accepte donc rien.</value>
   </data>
+  <data name="InputMask_TooLong" xml:space="preserve">
+    <value>Ce masque demande {0} caractères mais la colonne en accepte {1} : une valeur complète ne peut pas être enregistrée. Choisissez l’enregistrement brut, un modèle plus court ou une colonne plus longue.</value>
+  </data>
 </root>

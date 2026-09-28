@@ -57,6 +57,19 @@ export function createProbe(input: HTMLInputElement): Probe {
         input.addEventListener(type, record);
     });
 
+    // Redo: does Ctrl+Y reach the field, and did the control take it?
+    input.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey) {
+            probe.note('keydown', {
+                key: event.key,
+                shift: event.shiftKey,
+                defaultPrevented: event.defaultPrevented,
+                value: input.value,
+                caret: input.selectionStart,
+            });
+        }
+    });
+
     // P3: is preventDefault on beforeinput honoured on the form?
     input.addEventListener('beforeinput', (event) => {
         if (blockHash && (event as InputEvent).data === '#') {
