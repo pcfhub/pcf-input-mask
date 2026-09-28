@@ -74,6 +74,22 @@ platform's call icon being gone goes into `limitations.md` for 0.1.0; a call
 button of the control's own is a 0.2.0 candidate (it would need a probe
 question: does `openUrl` take `tel:` on a form and on the phone client).
 
+**P2 — 2026-09-28, 0.0.2 on `telephone1`. Right way; per-keystroke notify
+kept.** Every write came back as an `updateView` **120–430 ms** later. Typing
+`2` 137 ms after `1` produced the reorder on this control too: write
+`(555) 1` (38716), write `(555) 12` (38853), echo **`(555) 1`** (38870), echo
+`(555) 12` (38973). The recent-writes guard classified the late one as an echo
+and the box kept `(555) 12`, cursor at 8 — a single-value guard would have put
+`(555) 1` back and dropped the `2`. Blur mode bought nothing and leaked: the
+first keystroke flipped `isValid` true → false, and that verdict notify carried
+`(5` to the platform (178383) while the value notify was being held. 0.1.0
+notifies on every keystroke and the switch goes.
+
+**P3 (typing only) — same log.** Typing arrives as `InputEvent`,
+`cancelable: true`, `inputType: "insertText"`, `data` the character; `input`
+carries the same `inputType`/`data`; the `change` on leaving is a plain `Event`.
+As the rig models. Still open: paste, Backspace, autofill, undo, `blockHash`.
+
 Reading a saved value back (P5), in the console:
 
 ```js
@@ -93,5 +109,7 @@ inputs, focus. What the demo cannot show is the platform's echo timing (P2).
   word — the composition path is asserted against Chromium's documented order
   only.
 - A canvas app gating Save on `isValid`.
+- Whether a form OnChange handler on the column runs on every keystroke, now that
+  every keystroke notifies (as every text control in the catalogue does).
 - Autofill's event shape (`dom.user.autofill` is Chromium's documented shape,
   not a measurement).
