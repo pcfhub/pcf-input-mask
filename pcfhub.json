@@ -4,6 +4,7 @@
   "slug": "pcf-input-mask",
   "name": "Input Mask",
   "tagline": "Type into a pattern — phone numbers, postal codes, IDs — and the column keeps its shape.",
+  "summary": "Formats a text column as it is typed: `5551234567` becomes `(555) 123-4567`, and characters a slot does not take are refused. It replaces the platform's own Input Mask control, which was deprecated in 2023.\n\n- Keeps the cursor in place when typing, deleting or pasting in the middle of a value\n- Shows values already in the column in the mask, and leaves the ones it cannot show as saved\n- Marks an unfinished value as incomplete without discarding what was typed\n- Stores either the formatted value or the typed characters alone",
   "category": "input",
   "hosts": ["canvas", "model-driven"],
   "tags": ["accessible", "localised", "no-dependencies", "input-mask", "phone", "validation"],
