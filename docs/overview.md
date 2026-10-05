@@ -9,6 +9,10 @@ order: 1
 Type into a pattern — phone numbers, postal codes, IDs — and the column keeps
 its shape.
 
+:::callout{type=warning}
+**Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [SPEC.md](https://github.com/pcfhub/pcf-input-mask/blob/main/SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+:::
+
 ::image{src=media/states-light.png alt="Seven Input Mask fields: a US phone in the mask; a partial (555 with Incomplete: 3 of 10 characters in red; 555-0152 saved before the mask, with a grey note; a Canadian postal code K1A 0B1; an order code AB-1234; a read-only phone; and an empty focused field showing the guide (___) ___-____."}
 
 The platform's own *Input Mask* control was deprecated in January 2023 and has

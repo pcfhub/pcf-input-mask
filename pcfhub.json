@@ -8,6 +8,8 @@
   "category": "input",
   "hosts": ["canvas", "model-driven"],
   "tags": ["accessible", "localised", "no-dependencies", "input-mask", "phone", "validation"],
+  "supportLevel": "reference",
+  "builtWith": "ai",
 
   "control": {
     "namespace": "PCFHub",
