@@ -106,6 +106,49 @@ itself like that, since every write comes back as a new value. The standard
 template scaffold had the same gap (`_template` 3154968); the skill says so in
 `rendering-and-hosts.md`.
 
+## 0.1.2 — two things a canvas app does that this control had backwards
+
+Read in a published canvas app on 7 October 2026, with the 0.1.1 code and then
+with 0.1.2, four instances on one screen (`.probe-kit/attributes-probe` beside
+this repository has the dumps and scripts).
+
+**A canvas app reports a column length for no column.** `attributes` is there
+on every bound property in canvas and describes the *property*: an empty
+`EntityLogicalName`, `value` as `LogicalName`, `MaxLength: 100` — for a literal
+and for a Dataverse column that is 850 long on a form. The control compared the
+mask with it. And `attributes !== undefined` was its tell for "this is a form",
+so in canvas it would also have withheld the platform's error text; no canvas
+`error` was ever seen, so that half is fixed from the code and not watched.
+
+**An output nobody has reported reads false.** The control reported its first
+verdict only when it was false, on the belief that silence meant true. In a
+canvas app silence reads false.
+
+| Instance | 0.1.1 | 0.1.2 |
+| --- | --- | --- |
+| `(555) 123-4567` under the phone mask | `isValid` false until edited | true on load |
+| empty, custom mask of 100 digits | `isValid` false until edited | true on load |
+| empty, custom mask of 101 digits | "This mask needs 101 characters but the column holds 100…" | no message, true |
+| a Dataverse name, custom mask of 120 | the same message, with 120 | the neutral "does not fit the mask" note, false |
+
+After an edit both versions agree: one digit short reads false, restored reads
+true; one digit typed into the empty field reads false, removed reads true.
+
+**The fix**: `columnOf` in `index.ts` takes `attributes` as a column's only when
+`EntityLogicalName` names a table; the length and the form tell are read
+through it; and with no column the first verdict is reported whatever it is. A
+form is told only a false first verdict, as before — it has no use for the
+output, and `reading it writes nothing` is still asserted there.
+
+**What it costs a canvas maker**: `OnChange` now runs once when the control
+loads, because reporting the verdict is an output change.
+
+**The rig was the reason nothing failed.** `dev/host.js` modelled canvas as
+`attributes: undefined`. It hands over the placeholder as read now, and against
+the 0.1.1 code five of the new and existing assertions fail — including "in
+canvas the platform's message is shown", which had been passing against a host
+that does not exist.
+
 ## Demo
 
 `full`: nothing leaves the browser — no Web API, no device, no navigation —
@@ -117,7 +160,15 @@ inputs, focus. What the demo cannot show is the platform's echo timing.
 - The Power Apps phone client with the Android keyboard, which composes every
   word — the composition path is asserted against Chromium's documented order
   only (W7 asks).
-- A canvas app gating Save on `isValid` — the control is confirmed working in
-  canvas, the output driving a Save is not.
+- A canvas app gating Save on `isValid` — a label formula read the output on
+  load and after edits (0.1.2, above); a button's `DisplayMode` was not wired to
+  it.
+- 0.1.2 on a model-driven form. The suite asserts the form path is unchanged,
+  and `EntityLogicalName` was read as the table's name for a text column on a
+  form; this build was not placed on one.
+- A canvas app raising `error` on the bound value. None was seen, so the text
+  being shown there rests on the rig.
+- A custom pattern that accepts nothing, in canvas: the control reports no
+  verdict in that state, so `isValid` reads false there.
 - Whether a form OnChange handler on the column runs on every keystroke, now
   that every keystroke notifies (as every text control in the catalogue does).

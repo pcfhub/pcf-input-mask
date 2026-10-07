@@ -90,8 +90,46 @@
             label: 'canvas app',
             publishesTheme: false,
             publishesMetadata: false,
+            /*
+             * No column metadata, and an `attributes` all the same: a canvas
+             * app describes the *property*. `canvasAttributes` has the values.
+             */
+            describesNoColumn: true,
         },
     };
+
+    /**
+     * What a bound property reported for `security` in a canvas app
+     * (2026-10-06): never `undefined`, always open.
+     */
+    var CANVAS_SECURITY = { editable: true, readable: true, secured: false };
+
+    /**
+     * `attributes` on a bound text property in a published canvas app, as read
+     * on 2026-10-06 and the same for a literal, a variable, a collection and a
+     * Dataverse column: the property's own name where a column's would be, no
+     * table, and **`MaxLength: 100` whatever the source allows**.
+     */
+    function canvasAttributes(name) {
+        return {
+            EntityLogicalName: '',
+            LogicalName: name,
+            DisplayName: name,
+            RequiredLevel: 0,
+            IsSecured: false,
+            SourceType: null,
+            DefaultValue: '',
+            ImeMode: 0,
+            MaxLength: 100,
+            MinValue: -100000000000,
+            MaxValue: 100000000000,
+            Precision: 2,
+            Behavior: 0,
+            Options: null,
+            Type: 'string',
+            Format: 'Text',
+        };
+    }
 
     /**
      * How the column's field-level security is configured.
@@ -165,6 +203,8 @@
         dark: undefined,
         rtl: false,
         maxLength: 100,
+        /** The table the column is on: what `attributes.EntityLogicalName` answers on a form. */
+        table: 'account',
 
         /**
          * What the platform hands `init()` as its third argument.
@@ -1949,7 +1989,9 @@
         }
 
         var host = HOSTS[o.host] || HOSTS['model-driven'];
-        var security = SECURITY[o.security];
+        var security = host.describesNoColumn && o.security === 'none'
+            ? Object.assign({}, CANVAS_SECURITY)
+            : SECURITY[o.security];
         var clientUrl = o.clientUrl || nextClientUrl();
         var isLookup = o.valueType === 'Lookup.Simple';
         // This host's own rows — see `fixtureFor`.
@@ -1994,16 +2036,22 @@
                 value: {
                     raw: o.value,
                     /*
-                     * Present only where the host has column metadata.
-                     *
-                     * The control reads `parameter.attributes?.MaxLength`, and
-                     * that single `?` is the whole canvas/model-driven
-                     * difference. Supplying it on canvas would hide the one bug
-                     * this switch exists to find.
+                     * The column's on a form, with the table it is on. In a
+                     * canvas app an `attributes` is there as well and describes
+                     * no column: the tell is `EntityLogicalName`, a table's
+                     * name here and empty there. This rig said `undefined` for
+                     * canvas until 2026-10-07, and that hid two bugs.
                      */
                     attributes: host.publishesMetadata
-                        ? { MaxLength: o.maxLength, LogicalName: o.column, DisplayName: o.label }
-                        : undefined,
+                        ? {
+                            MaxLength: o.maxLength,
+                            EntityLogicalName: o.table,
+                            LogicalName: o.column,
+                            DisplayName: o.label,
+                        }
+                        : host.describesNoColumn
+                            ? canvasAttributes('value')
+                            : undefined,
                     /*
                      * `undefined` unless the column carries a field-level
                      * security profile — see SECURITY above. The common case is
@@ -2658,6 +2706,8 @@
     return {
         HOSTS: HOSTS,
         SECURITY: SECURITY,
+        CANVAS_SECURITY: CANVAS_SECURITY,
+        canvasAttributes: canvasAttributes,
         STRINGS: STRINGS,
         DEFAULTS: DEFAULTS,
         FORM_FACTORS: FORM_FACTORS,

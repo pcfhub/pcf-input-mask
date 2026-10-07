@@ -27,8 +27,10 @@ order: 5
 - **An empty value is written as a cleared column**, not as an empty string.
 - **A partial value is written.** **Is valid** says whether it is complete; the
   column says what was typed.
-- **Is valid is notified when it changes**, including once on load when the
-  stored value is partial or does not fit the mask.
+- **Is valid is notified when it changes, and once on load.** In a canvas app
+  the load report is always made, because an output nobody has reported reads
+  `false` there. On a model-driven form it is made only when the stored value
+  is partial or does not fit the mask.
 - **A custom pattern with no `9`, `a`, `A` or `*` accepts nothing.** The field
   then shows the column as it is, takes no typing, and says so — it never
   writes.

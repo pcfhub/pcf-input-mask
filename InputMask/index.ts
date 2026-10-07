@@ -8,6 +8,24 @@ import { Store, neededLength, stored, storeOf, verdictOf } from './verdict';
 const ECHO_MEMORY = 32;
 
 /**
+ * The column behind a bound property, when there is one.
+ *
+ * A model-driven form describes the column in `attributes`. A canvas app hands
+ * over an `attributes` too, for every source, and it describes the *property*:
+ * an empty `EntityLogicalName`, the property's own name as `LogicalName`, and
+ * `MaxLength: 100` whatever the text is bound to (read in a published canvas
+ * app, 2026-10-06). So `attributes` being there says nothing; a table's name in
+ * it does.
+ */
+function columnOf<T extends object>(parameter: { attributes?: T }): T | undefined {
+    const attributes = parameter.attributes as (T & { EntityLogicalName?: unknown }) | undefined;
+
+    return typeof attributes?.EntityLogicalName === 'string' && attributes.EntityLogicalName !== ''
+        ? attributes
+        : undefined;
+}
+
+/**
  * A text or phone column typed into a pattern.
  *
  * The control holds the value as its **characters** — what went into the
@@ -473,15 +491,17 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
      * Measured 2026-09-28: the form draws it under the field itself ("⊗ Main
      * Phone: Required fields must be filled in."), so printing
      * `errorMessage` showed every error twice. There the field is only marked
-     * invalid; in canvas, which draws nothing, the text is shown. Column
-     * metadata is the tell — a model-driven form publishes `attributes`,
-     * canvas does not.
+     * invalid; in canvas, which draws nothing, the text is shown. A column is
+     * the tell, and `attributes` alone is not one — see `columnOf`. Through
+     * 0.1.1 it was taken for one, and a mask longer than the 100 a canvas app
+     * reports for no column said the column was too short.
      */
     private drawState(): void {
         const parameter = this.context.parameters.value;
         const mask = this.mask as Mask;
-        const modelDriven = parameter.attributes !== undefined;
-        const maxLength = parameter.attributes?.MaxLength;
+        const column = columnOf(parameter);
+        const modelDriven = column !== undefined;
+        const maxLength = column?.MaxLength;
         const needed = neededLength(mask, this.store);
 
         if (parameter.error) {
@@ -520,7 +540,13 @@ export class InputMask implements ComponentFramework.StandardControl<IInputs, IO
         } else if (this.lastValid === undefined) {
             this.lastValid = valid;
 
-            if (!valid) {
+            // The first verdict. A canvas app reads an output nobody has
+            // reported yet as false, so through 0.1.1 a complete value and an
+            // empty optional field both read "not valid" until their first
+            // edit (a published canvas app, 2026-10-07). With no column behind
+            // the value it is always reported. A form has no use for the
+            // output and is told only when it is false, as before.
+            if (!valid || !modelDriven) {
                 this.notifyOutputChanged();
             }
         }

@@ -24,6 +24,23 @@ it is partial or when the stored value does not fit:
 DisplayMode: If(InputMask1.isValid, DisplayMode.Edit, DisplayMode.Disabled)
 ```
 
+The control reports **Is valid** as soon as it loads, so the button is right
+before anyone types. That report is an output change: `OnChange` runs once on
+load.
+
+:::callout{type=warning}
+**0.1.1 and earlier reported nothing on load unless the value was incomplete,
+and a canvas app reads that silence as `false`.** A record with a complete
+phone number, or an empty optional field, kept a Save gated on **Is valid**
+disabled until somebody edited the field. Those versions also told a custom
+mask longer than 100 characters that "the column holds 100", whatever it was
+bound to. 0.1.2 fixes both.
+
+Importing 0.1.2 does not update an app that already has the control. Open the
+app in Studio after the import, accept **Update code components**, then save
+and publish — if Save is greyed out, change any formula first.
+:::
+
 An empty value counts as valid on purpose: whether the field may be empty is
 the form's own required-ness, not the mask's. Combine the two when both
 matter:

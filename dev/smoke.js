@@ -430,6 +430,36 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     // false on load, so a canvas app gating Save knows before anyone types.
     check('an incomplete stored value reports isValid false on load, once', refused.notifications() === 1 && refused.outputs().isValid === false);
 
+    /*
+     * The first verdict in a canvas app is reported whatever it is. An output
+     * nobody has reported reads false there, so through 0.1.1 a complete value
+     * and an empty optional field read "not valid" until their first edit
+     * (a published canvas app, 2026-10-07), and a Save gated on isValid was
+     * off for a record nobody had touched.
+     */
+    const canvasComplete = mount({ host: 'canvas', value: '(555) 123-4567' });
+
+    check(
+        'in a canvas app a complete stored value reports isValid true on load, once, and the value unchanged',
+        canvasComplete.notifications() === 1 && canvasComplete.outputs().isValid === true && canvasComplete.outputs().value === '(555) 123-4567',
+        `${canvasComplete.notifications()} / ${JSON.stringify(canvasComplete.outputs())}`,
+    );
+
+    canvasComplete.update({ host: 'canvas', value: '(555) 123-4567' });
+    check('and says it once, not on every render', canvasComplete.notifications() === 1, String(canvasComplete.notifications()));
+
+    const canvasEmpty = mount({ host: 'canvas', value: null });
+
+    check(
+        'an empty optional field reports true there too, and clears nothing it was not asked to',
+        canvasEmpty.notifications() === 1 && canvasEmpty.outputs().isValid === true && canvasEmpty.outputs().value === null,
+        `${canvasEmpty.notifications()} / ${JSON.stringify(canvasEmpty.outputs())}`,
+    );
+
+    const canvasShort = mount({ host: 'canvas', value: '(555' });
+
+    check('and an incomplete one reports false, once', canvasShort.notifications() === 1 && canvasShort.outputs().isValid === false);
+
     field(refused).setSelectionRange(4, 4);
     dom.user.type(field(refused), 'x');
     check('a letter in a phone mask changes nothing and notifies nothing', field(refused).value === '(555' && field(refused).selectionStart === 4 && refused.notifications() === 1);
@@ -636,6 +666,25 @@ const shown = (handle) => (message(handle).hidden ? '' : message(handle).textCon
     check('a formatted mask longer than the column says so', shown(tooLong) === 'resx:InputMask_TooLong' && tooLong.container.classList.contains('InputMask--invalid'), shown(tooLong));
     check('stored raw, the same mask fits and says nothing', shown(mount({ value: null, maxLength: 20, inputs: { ...long, store: 'raw' } })) === '');
     check('in canvas there is no column length to compare with', shown(mount({ value: null, host: 'canvas', inputs: long })) === '');
+
+    /*
+     * A canvas app hands the property an `attributes` that describes no
+     * column: `MaxLength: 100` for a literal and for an 850-character
+     * Dataverse column alike (a published canvas app, 2026-10-06). Through
+     * 0.1.1 a mask of 101 characters there was told "the column holds 100".
+     */
+    const canvasAttributes = host.createContext({ host: 'canvas' }).parameters.value.attributes;
+
+    check(
+        'the rig’s canvas host reports what a canvas app reports: 100, and no table',
+        canvasAttributes.MaxLength === 100 && canvasAttributes.EntityLogicalName === '' && canvasAttributes.LogicalName === 'value',
+        JSON.stringify(canvasAttributes),
+    );
+
+    const longer = { mask: 'custom', pattern: '9'.repeat(101) };
+
+    check('a mask longer than a canvas app’s 100 is not told its column is too short', shown(mount({ value: null, host: 'canvas', inputs: longer })) === '', shown(mount({ value: null, host: 'canvas', inputs: longer })));
+    check('on a form the same mask in a 100-character column still is', shown(mount({ value: null, maxLength: 100, inputs: longer })) === 'resx:InputMask_TooLong');
 
     const guided = mount({ value: null, placeholder: 'Phone' });
 
