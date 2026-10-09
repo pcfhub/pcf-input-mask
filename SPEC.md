@@ -22,7 +22,7 @@ are the exception**: cancelled and answered from the control's own history
 rewrite. The general rules are in the skill — *A value the control reformats as
 you type* in `references/rendering-and-hosts.md`.
 
-## Measured — probes 0.0.1 to 0.0.4, Accounts form, cll365, 2026-09-28
+## Measured — probes 0.0.1 to 0.0.4, Accounts form, the test environment, 2026-09-28
 
 Promoted to the skill, and only pointed at here:
 
