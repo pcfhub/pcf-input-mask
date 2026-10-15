@@ -32,8 +32,8 @@ Promoted to the skill, and only pointed at here:
 - The event shapes: typing, paste, Backspace, autofill (bare `input`, no
   `beforeinput`), an honoured `preventDefault`, undo broken by a rewrite and
   redo with it, an identical `value` assignment keeping the cursor →
-  `rendering-and-hosts.md` and `verification.md`, *The cursor, and typing as a
-  person does*.
+  `references/rendering-and-hosts.md`, and `references/verification.md`, under
+  *The cursor, and typing as a person does*.
 - `type` on a type-group binding naming the wrong member (`SingleLine.Phone` on
   a Text column) → `manifest.md`, *Narrowing it*.
 - The platform's own error drawn under the field by the modern form →
@@ -104,7 +104,7 @@ preset's value as it always was — which `adopt` took as the form's change. A
 value equal to the host's last one is ignored now; a form never repeats
 itself like that, since every write comes back as a new value. The standard
 template scaffold had the same gap (`_template` 3154968); the skill says so in
-`rendering-and-hosts.md`.
+`references/rendering-and-hosts.md`.
 
 ## 0.1.2 — two things a canvas app does that this control had backwards
 
